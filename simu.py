@@ -14,7 +14,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.02            # Sampling time (sec)
-simulation_time = 30   # Length of time to run simulation (sec)
+simulation_time = 50   # Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle = math.pi/4
 
@@ -223,14 +223,14 @@ class PID:
         return output
 class Controller:
     def __init__(self):
-        Kp_pos = [0.31, 0.32, 0.33] # proportional [x,y,z]
-        Ki_pos = [0.12, 0.3, 0.11]  # integral [x,y,z]
-        Kd_pos = [8, 8, 8] # derivative [x,y,z]
+        Kp_pos = [3, 6, 3] # proportional [x,y,z]3,6,3?
+        Ki_pos = [0, 0, 0]  # integral [x,y,z]
+        Kd_pos = [0, 0, 0] # derivative [x,y,z]
 
         # Gains for angle controller
-        Kp_ang= [0.35, 0.3574, 0.35] # proportional [x,y,z]
-        Ki_ang = [0.155, 0.15, 0.15]  # integral [x,y,z]
-        Kd_ang = [8, 8, 8.00] # derivative [x,y,z]
+        Kp_ang= [3, 3, 4] # proportional [x,y,z]3,3,4?
+        Ki_ang = [0, 0, 0]  # integral [x,y,z]
+        Kd_ang = [0, 0, 0] # derivative [x,y,z]
         self.position = np.array([0.0, 0.0, 0.0])
         self.attitude = np.array([0.0, 0.0, 0.0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.125)
@@ -248,7 +248,7 @@ class Controller:
             t_psi = self.outer_pid_y.update(error_y,dt)
             self.attitude[0] = t_phi
             self.attitude[1] = t_psi
-            #else:
+            #if x[11, k] < 0.45:
             #    self.attitude[0] = 0
             #    self.attitude[1] = 0
             
@@ -296,10 +296,10 @@ class Controller:
                 for i in range(under_min.size):
                     motor_speeds[under_min[i][0]] = minT / (kt)
             """        
-            motor_speed_1 = np.clip(np.power(motor_speeds[0],1/2), 0, 5000)
-            motor_speed_2 = np.clip(np.power(motor_speeds[1],1/2), 0, 5000)
-            motor_speed_3 = np.clip(np.power(motor_speeds[2],1/2), 0, 5000)
-            motor_speed_4 = np.clip(np.power(motor_speeds[3],1/2), 0, 5000)
+            motor_speed_1 = np.clip(np.power(motor_speeds[0],1/2), 0, 500)
+            motor_speed_2 = np.clip(np.power(motor_speeds[1],1/2), 0, 500)
+            motor_speed_3 = np.clip(np.power(motor_speeds[2],1/2), 0, 500)
+            motor_speed_4 = np.clip(np.power(motor_speeds[3],1/2), 0, 500)
             
             
             #motor_speed_1 = np.clip(np.sqrt(motor_torque_1), 0, 5000)
@@ -382,8 +382,8 @@ for k in range(0, np.size(t) - 1):
     #print(x[9:,k])
     #if  x[11,k+1] <= 0 :
     #print(tau[:,k])
-    if x[11,k+1] < 0:
-        break
+    #if x[11,k+1] < 0:
+    #    break
     
 
 plt.figure(1, figsize=(8,8))
@@ -393,7 +393,7 @@ plt.plot(t,x[10,:],'b',label='y')
 plt.plot(t,x[11,:],'g',label='z')
 
 #plt.ylim(-0.05, 0.1)
-plt.xlim(0, 1.5)
+plt.xlim(0, 50)
 plt.legend(loc='best')
 plt.ylabel('z (m)')
 #plt.xlabel('Time (sec)')
@@ -413,17 +413,17 @@ plt.plot(t,tau[0,:],'r',label='roll')
 plt.plot(t,tau[1,:],'b',label='pitch')
 plt.plot(t,tau[2,:],'g',label='yaw')
 #plt.plot(t,x[9,:],'r',label='x')
-plt.xlim(0, 1)
+plt.xlim(0, 50)
 plt.legend(loc='best')
 #plt.ylabel('tau (deg)')
 plt.ylabel('tau (m)')
 #plt.xlabel('Time (sec)')
 
 plt.subplot(313)
-plt.plot(t,x[6,:]*RTD,'r',label='phi',marker=".")
-plt.plot(t,x[7,:]*RTD,'b',label='theta',marker=".")
-plt.plot(t,x[8,:]*RTD,'g',label='psi',marker=".")
-plt.xlim(0, 1)
+plt.plot(t,x[6,:]*RTD,'r',label='phi')
+plt.plot(t,x[7,:]*RTD,'b',label='theta')
+plt.plot(t,x[8,:]*RTD,'g',label='psi')
+plt.xlim(0, 50)
 plt.legend(loc='best')
 plt.ylabel('Theta (deg)')
 plt.xlabel('Time (sec)')
@@ -444,7 +444,7 @@ plt.plot(t[0:-1],u[0,0:-1],'b',label='T1')
 plt.plot(t[0:-1],u[1,0:-1],'g',label='T2')
 plt.plot(t[0:-1],u[2,0:-1],'r',label='T3')
 plt.plot(t[0:-1],u[3,0:-1],'y',label='T4')
-plt.xlim(0, 1)
+plt.xlim(0, 50)
 plt.xlabel('Time (sec)')
 plt.ylabel('Propeller RPM')
 plt.legend(loc='best')

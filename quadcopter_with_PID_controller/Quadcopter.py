@@ -66,7 +66,7 @@ class Quadcopter():
         self.mass = mass # total mass of the vehicle, kg
         self.Ixx = Ixx = 0.0007309  # mass-moment of inertial about x-axis, kg-m^2
         self.Iyy = 0.0006644  # mass-moment of inertial about y-axis, kg-m^2
-        self.Izz = 0.0012558 # mass-moment of inertial about z-axis, kg-m^2
+        self.Izz = 6.12233e-5 # mass-moment of inertial about z-axis, kg-m^2
         self.A_ref = 0.02 # reference area for drag calcs, m^2 
         self.L = 0.125 # length from body center to prop center, m
         self.kt = kt # proportionality constant to convert motor rotational speed into thrust (T=kt*omega^2), N/(rpm)^2
@@ -78,7 +78,7 @@ class Quadcopter():
 
         self.maxT = 16.5 #  max thrust from any single motor, N
         self.minT = .5 # min thrust from any single motor, N 
-        self.max_angle = math.pi/4 #radians, max angle allowed at any time step
+        self.max_angle = math.pi/12 #radians, max angle allowed at any time step
 
         self.I = np.array([[self.Ixx, 0, 0],[0, self.Iyy, 0],[0, 0, self.Izz]])
         self.g = np.array([0, 0, -gravity])

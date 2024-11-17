@@ -27,7 +27,7 @@ from PID_Controller import PID_Controller
 
 #sim run time
 sim_start = 0 #start time of simulation
-sim_end = 15 #end time of simulation in sec
+sim_end = 50 #end time of simulation in sec
 dt = 0.01 #step size in sec
 time_index = np.arange(sim_start, sim_end + dt, dt)
 
