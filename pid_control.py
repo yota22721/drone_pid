@@ -101,8 +101,7 @@ class Controller:
 
 class Rotation:
     def __init__(self):
-        self.l = 1e-9
-
+        self.l = 0.125
     def motor_speeds(self, thrust, torques):
         torque_x = torques[0]
         torque_y = torques[1]
