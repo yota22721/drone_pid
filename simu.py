@@ -26,7 +26,7 @@ n_inputs = 4   # Number of inputs
 R = 0.12
 A = np.pi * R **2
 
-kt = 0.01
+kt = 1e-9
 bt = 1e-9
 cq = 2.6839*10**(-9)*(60/(2*np.pi))**2
 
@@ -301,6 +301,7 @@ class Controller:
             # Ensure that desired thrust is within overall min and max of all motors
             thrust_all = np.array(motor_speeds) * (kt)
             #print(thrust_all)
+            #print(thrust_all)
             over_max = np.argwhere(thrust_all > maxT)
             under_min = np.argwhere(thrust_all < minT)
 
@@ -322,6 +323,7 @@ class Controller:
             u[1,k] = motor_speed_2
             u[2,k] = motor_speed_3
             u[3,k] = motor_speed_4
+            #u[:,k] = np.array(u[:,k]) * (2*np.pi/60)
             #print(u[:,k])
             print("=========")
             #print(x[6:9,k])
@@ -415,7 +417,6 @@ plt.legend(loc='best')
 plt.title('Time History of Control Inputs')
 
 plt.figure(4, figsize=(8,8))
-#plt.plot(t,tu[0,:],'r',label='thrust')
 plt.plot(t,tu[1,:],'b',label='torque_x')
 plt.plot(t,tu[2,:],'g',label='torque_y')
 plt.plot(t,tu[3,:],'y',label='torque_z')
@@ -425,8 +426,16 @@ plt.ylabel('tau')
 plt.legend(loc='best')
 plt.title('Time History of Control Inputs')
 
+plt.figure(5, figsize=(8,8))
+plt.plot(t,tu[0,:],'r',label='thrust')
+#plt.xlim(0, 1)
+plt.xlabel('Time (sec)')
+plt.ylabel('T[N]')
+plt.legend(loc='best')
+plt.title('Time History of Control Inputs')
 
-fig = plt.figure(5, figsize=(4,5))
+
+fig = plt.figure(6, figsize=(4,5))
 axes = fig.add_subplot(1, 1, 1, projection='3d')
 axes.plot(x[9,:], x[10,:], x[11,:])
 axes.set_title('Flight Path')

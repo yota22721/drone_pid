@@ -27,7 +27,7 @@ class Quadcopter():
 
     def __init__(self, pos, vel, angle, ang_vel, pos_ref, dt):
 
-        mass =  1.28# total mass of the vehicle, kg
+        mass =  1.28 # total mass of the vehicle, kg
         gravity = 9.8 # acceleration due to gravity, m/s^2
         num_motors = 4 # number of motors on the vehicle
         kt = 1e-7 # proportionality constant to convert motor rotational speed into thrust (T=kt*omega^2), N/(rpm)^2
@@ -64,9 +64,9 @@ class Quadcopter():
         # Vehicle constants
         self.num_motors = num_motors # number of motors on the vehicle
         self.mass = mass # total mass of the vehicle, kg
-        self.Ixx = Ixx = 0.0007309  # mass-moment of inertial about x-axis, kg-m^2
+        self.Ixx = 0.0007309  # mass-moment of inertial about x-axis, kg-m^2
         self.Iyy = 0.0006644  # mass-moment of inertial about y-axis, kg-m^2
-        self.Izz = 6.12233e-5 # mass-moment of inertial about z-axis, kg-m^2
+        self.Izz = 0.0012558 # mass-moment of inertial about z-axis, kg-m^2
         self.A_ref = 0.02 # reference area for drag calcs, m^2 
         self.L = 0.125 # length from body center to prop center, m
         self.kt = kt # proportionality constant to convert motor rotational speed into thrust (T=kt*omega^2), N/(rpm)^2
@@ -254,4 +254,3 @@ class Quadcopter():
         self.vel += self.dt * self.lin_acc
         self.pos += self.dt * self.vel
         self.time += self.dt
-

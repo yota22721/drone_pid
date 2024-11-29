@@ -27,7 +27,7 @@ from PID_Controller import PID_Controller
 
 #sim run time
 sim_start = 0 #start time of simulation
-sim_end = 50 #end time of simulation in sec
+sim_end = 15 #end time of simulation in sec
 dt = 0.01 #step size in sec
 time_index = np.arange(sim_start, sim_end + dt, dt)
 
@@ -53,15 +53,15 @@ ang_vel_init = ang_vel.copy()  #record for later display
 gravity = 9.8 # acceleration due to gravity, m/s^2
 
 # Gains for position controller
-Kp_pos = [0.35, 0.35, 0.35] # proportional [x,y,z]
-Ki_pos = [0.15, 0.15, 0.15]  # integral [x,y,z]
-Kd_pos = [8.0, 8, 8.0] # integral [x,y,z]
+Kp_pos = [.95, .95, 15.] # proportional [x,y,z]
+Kd_pos = [1.8, 1.8, 15.]  # derivative [x,y,z]
+Ki_pos = [0.2, 0.2, 1.0] # integral [x,y,z]
 Ki_sat_pos = 1.1*np.ones(3)  # saturation for integral controller (prevent windup) [x,y,z]
 
 # Gains for angle controller
-Kp_ang= [0.35, 0.35, 0.35] # proportional [x,y,z]
-Ki_ang = [0.15, 0.15, 0.15]  # integral [x,y,z]
-Kd_ang = [8, 8, 8.0] # integral [x,y,z]
+Kp_ang = [6.9, 6.9, 25.] # proportional [x,y,z]
+Kd_ang = [3.7, 3.7, 9.]  # derivative [x,y,z]
+Ki_ang = [0.1, 0.1, 0.1] # integral [x,y,z]
 Ki_sat_ang = 0.1*np.ones(3)  # saturation for integral controller (prevent windup) [x,y,z]
 
 # Create quadcotper with position and angle controller objects
@@ -159,14 +159,14 @@ for time in enumerate(time_index):
     angle_vel[1].append(np.rad2deg(quadcopter.ang_vel[1]))
     angle_vel[2].append(np.rad2deg(quadcopter.ang_vel[2]))
 
-    motor_thrust[0].append(np.sqrt(quadcopter.speeds[0]))
-    motor_thrust[1].append(np.sqrt(quadcopter.speeds[1]))
-    motor_thrust[2].append(np.sqrt(quadcopter.speeds[2]))
-    motor_thrust[3].append(np.sqrt(quadcopter.speeds[3]))
     #motor_thrust[0].append(quadcopter.speeds[0]*quadcopter.kt)
     #motor_thrust[1].append(quadcopter.speeds[1]*quadcopter.kt)
     #motor_thrust[2].append(quadcopter.speeds[2]*quadcopter.kt)
     #motor_thrust[3].append(quadcopter.speeds[3]*quadcopter.kt)
+    motor_thrust[0].append(quadcopter.speeds[0])
+    motor_thrust[1].append(quadcopter.speeds[1])
+    motor_thrust[2].append(quadcopter.speeds[2])
+    motor_thrust[3].append(quadcopter.speeds[3])
 
     body_torque[0].append(quadcopter.tau[0])
     body_torque[1].append(quadcopter.tau[1])
