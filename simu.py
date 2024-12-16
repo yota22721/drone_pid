@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.02            # Sampling time (sec)
-simulation_time = 120   # Length of time to run simulation (sec)
+simulation_time =5 # Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle = math.pi*7/36
 
@@ -36,7 +36,8 @@ x = np.zeros((n_states,np.size(t)))  # time history of state vectors
 tau = np.zeros((3,np.size(t)))  # time history of state vectors
 tu = np.zeros((4,np.size(t)))
 th = np.zeros((4,np.size(t)))
-#pos = np.zeros((3,np.size(t)))
+pos = np.zeros((3,np.size(t)))
+speeds = np.zeros((3,np.size(t)))
 # Initial height
 #x[6,0] = -0.784
 #x[7,0] = 0.784
@@ -46,9 +47,9 @@ x[9,0] = 1.0
 x[10,0] =1.3
 x[11,0] = 1.5
 
-#pos[0,0] = 1.0
-#pos[1,0] = 1.3
-#pos[2,0] = 1.5
+pos[0,0] = 1.0
+pos[1,0] = 1.3
+pos[2,0] = 1.5
 
 
 
@@ -142,8 +143,8 @@ def stateDerivative(x, u):
     
     #calculate forces propeller inputs
     #F1 = Fthrust(x, u[0], dx, dy)
-    #F2 = Fthrust(x, u[1],-dx,-dy)
-    #F3 = Fthrust(x, u[2],dx,-dy)
+    #F2 = Fthrust(x, u[1],dx,-dy)
+    #F3 = Fthrust(x, u[2],-dx,-dy)
     #F4 = Fthrust(x, u[3], -dx, dy)
     F1 = kt*u[0]**2
     F2 = kt*u[1]**2
@@ -178,15 +179,15 @@ def stateDerivative(x, u):
     
     x_dot = np.zeros(12)
     
-    x_dot[0] = -g * sthe + r * vb - q * wb -0.25*ub/m#u_dot
-    x_dot[1] = g * sphi * cthe - r * ub + p * wb - 0.25*vb/m# v_dot
-    x_dot[2] = 1/m * (-Fz) + g * cphi *cthe + q *ub - p * vb-0.25*wb/m # w_dot
     #x_dot[0] = (Fz/m) *(cphi * sthe * cpsi + sphi * spsi)-0.25*ub/m
     #x_dot[1] = (Fz/m) *(cphi * sthe * spsi - sphi * cpsi)- 0.25*vb/m
-    #x_dot[2] =  - g+ (Fz/m) * (cphi * cthe)-0.25*wb/m 
+    #x_dot[2] =   -g+ (Fz/m) * (cphi * cthe)-0.25*wb/m 
+    x_dot[0] = -g * sthe + r * vb - q * wb -0.25*ub/m#u_dot
+    x_dot[1] = g * sphi * cthe - r * ub + p * wb - 0.25*vb/m# v_dot
+    x_dot[2] = 1/m * (-Fz) + g * cphi *cthe + q *ub - p * vb -0.25*wb/m # w_dot
     
-    x_dot[3] = 1/Ixx *(L + (Iyy - Izz)  * q * r) #p_dot
-    x_dot[4] = 1/Iyy *(M + (Izz - Ixx) * p * r)  #q_dot
+    x_dot[3] = 1/Ixx *(L + (Iyy - Izz)  * q * r)#- q*Ir/Ixx #p_dot
+    x_dot[4] = 1/Iyy *(M + (Izz - Ixx) * p * r)# + p*Ir/Iyy #q_dot
     x_dot[5] = 1/Izz *(N + (Ixx- Iyy) * p * q) #r_dot
     
     x_dot[6] = p + (q * sphi + r*cphi) * sthe / cthe #phi_dot
@@ -197,7 +198,7 @@ def stateDerivative(x, u):
                     (sphi*spsi + cphi*sthe*cpsi) * wb#xE_dot
     x_dot[10] = cthe * spsi * ub +(cphi *cpsi + sphi * sthe *spsi) * vb + \
                     (-sphi*cpsi + cphi*sthe*spsi) *wb #yE_dot
-    x_dot[11] = -1 * (-sthe * ub + sphi*cthe * vb + cphi*cthe *wb) #hE_dot
+    x_dot[11] =  -1 * (-sthe * ub + sphi*cthe * vb + cphi*cthe *wb) #hE_dot
     """
     x_dot[9] = cthe*cpsi*ub + cthe*spsi*vb - sthe*wb
     x_dot[10] = (sphi*sthe*cpsi - cphi*spsi)*ub + (sphi*sthe*psi + cphi*cpsi)*vb +\
@@ -254,15 +255,25 @@ class PID:
         self.p_output += du*dt
         """
         return self.p_output
+    
+    def pd(self, error, dt):
+        self.integral +=error*dt
+        prop = (error - self.p_error)/dt
+        #deriv = (prop - self.p_prop)/dt
+        du =  self.kp * prop + self.ki * self.integral- self.kd * prop
+        self.p_error = error
+        #self.p_prop = prop
+        self.p_output = du
+        return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [0.01, 0.01, 0.01] # proportional [x,y,z]
-        Ki_pos = [0.00001, 0.00001, 0.00001]  # integral [x,y,z]
-        Kd_pos = [0.1, 0.01, 0.1] # derivative [x,y,z]
+        Kp_pos = [0.1, 0.1, 0.1] # proportional [x,y,z]
+        Ki_pos = [0.001, 0.001, 0.001]  # integral [x,y,z]
+        Kd_pos = [0.0, 0.0, 0.01] # derivative [x,y,z]
 
         # Gains for angle controller
-        Kp_ang= [0.0001, 0.0001, 0.001] # proportional [x,y,z]
-        Ki_ang = [0.000001, 0.000001, 0.001]  # integral [x,y,z]
+        Kp_ang= [0.3, 0.3, 0.11] # proportional [x,y,z]
+        Ki_ang = [0.001, 0.001, 0.001]  # integral [x,y,z]
         Kd_ang = [0., 0, 0] # derivative [x,y,z]
         self.position = np.array([0.0, 0.0, 0.45])
         self.attitude = np.array([0.0, 0.0, 0.0])
@@ -273,32 +284,60 @@ class Controller:
         self.inner_pid_psi = PID(Kp_ang[1], Ki_ang[1], Kd_ang[1], 0.02)
         self.inner_pid_theta = PID(Kp_ang[2], Ki_ang[2], Kd_ang[2],0.02)
     def controller(self,u,x,k,dt):
-        
+            global speeds
+            ub = x[0,k]
+            vb = x[1,k]
+            wb = x[2,k]
+            phi = x[6,k]
+            theta = x[7,k]
+            psi = x[8,k]
+            cphi = np.cos(phi)
+            sphi = np.sin(phi)
+            cthe = np.cos(theta)
+            sthe = np.sin(theta)
+            cpsi = np.cos(psi)
+            spsi = np.sin(psi)
+            speeds[0,k] = cthe*cpsi * ub + (-cphi*spsi + sphi * sthe*cpsi)*vb + \
+                            (sphi*spsi + cphi*sthe*cpsi) * wb#xE_dot
+            speeds[1,k] = cthe * spsi * ub +(cphi *cpsi + sphi * sthe *spsi) * vb + \
+                            (-sphi*cpsi + cphi*sthe*spsi) *wb #yE_dot
+            speeds[2,k] =  -1 * (-sthe * ub + sphi*cthe * vb + cphi*cthe *wb) #hE_dot
+            #self.position[0] = np.clip(-x[9,0]*(k+1)/300 +x[9,0],0,np.inf)
+            #self.position[1] = np.clip(-x[10,0]*(k+1)/300 +x[10,0],0,np.inf)
+            if k+1 <= 6/0.02:
+                self.position[0] =(x[9,0]/(6/0.02)**2)*((k+1)-6/0.02)**2
+                self.position[1] =(x[10,0]/(6/0.02)**2)*((k+1)-6/0.02)**2
+            else:
+                self.position[0] = 0
+                self.position[1] = 0
+            #print(self.position)
+            #print("k ="+ str(k))
+            pos[0,k] = self.position[0]
+            pos[1,k] = self.position[1]
             error_x = self.position[0] - x[9,k]
             error_y = self.position[1] - x[10,k]
             error_z = self.position[2] - x[11,k]
-            #if x[11, k] > 0.45:
-            ux = self.outer_pid_x.update(error_x, dt)
-            uy = self.outer_pid_y.update(error_y,dt)
+            ud = error_x*np.cos(x[8,k]) + error_y*np.sin(x[8,k])
+            vd = error_y*np.cos(x[8,k]) - error_x*np.sin(x[8,k])
+            print("speeds")
+            print(x[:3,k])
+            print([ud,vd,error_z])
+            #if x[11, k] < 0.454:
+            #    self.position[2] = 0
+            error_ud = ud - x[0,k]
+            error_vd = vd - x[1,k]
+            ux = self.outer_pid_x.update(error_ud, dt)
+            uy = self.outer_pid_y.update(error_vd,dt)
             uz = self.inner_pid_z.update(error_z,dt)
-            #t_phi = np.arctan((self.position[1]-x[10,k])/(self.position[0]-x[9,k]))
-            #t_theta = np.arctan((self.position[2]-x[11,k])/np.sqrt(((self.position[0]-x[9,k]))**2+(self.position[1]-x[10,k])**2))
-            t_phi = np.arctan((uz)/(uy))
-            t_theta = np.arcsin((ux)/np.sqrt((ux)**2 + (uz)**2))
-            t_psi = np.arcsin((uy)/np.sqrt((ux)**2 +(uy)**2 + (uz)**2))
-            #t_phi = np.arctan(self.position)
-            #Fx = np.cos(x[8,k])*np.sin(x[7,k])*np.cos(x[6,k])+np.sin(x[8,k])*np.sin(x[6,k])
-            #Fy = np.sin(x[8,k])*np.sin(x[7,k])*np.cos(x[6,k])-np.cos(x[8,k])*np.sin(x[6,k])
-            #Fz = np.cos(x[7,k])*np.cos(x[6,k])
-            #t_phi = np.arcsin((Fx*np.tan(x[8,k])-Fy)/(np.cos(x[8,k])+np.sin(x[8,k])*np.tan(x[8,k])))
-            #t_theta = np.arctan((Fx*np.cos(x[8,k])**2-Fy*np.sin(x[8,k])*np.cos(x[8,k]))/(Fz*np.cos(x[8,k])))
-            #self.attitude[0] = ux*np.sin(x[8,k])-uy*np.cos(x[8,k])
-            #self.attitude[1] = ux*np.cos(x[8,k])+uy*np.sin(x[8,k])
-            #self.attitude[0] = ux
-            #self.attitude[1] = uy
-            self.attitude[0] = t_phi
-            self.attitude[1] = t_theta
-            self.attitude[2] = t_psi
+            #self.attitude[0] = ud*np.sin(x[8,k])-vd*np.cos(x[8,k])
+            #self.attitude[1] = -1*(ud*np.cos(x[8,k])+vd*np.sin(x[8,k]))
+            self.attitude[0] = ux
+            self.attitude[1] = -uy
+            #self.attitude[0] = np.arcsin((ux*np.sin(x[8,k])) - uy*np.cos(x[8,k])/(ux**2 + uy**2 + (uz+g)**2))
+            #self.attitude[1] = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
+            #self.attitude[0] = t_phi
+            #self.attitude[1] = t_theta
+            #self.attitude[2] = t_psi
             
             mag_angle_des = np.linalg.norm(self.attitude)
             
@@ -307,9 +346,7 @@ class Controller:
             #else:
             #    self.attitude[0] = 0
             #    self.attitude[1] = 0
-            
             #print(self.attitude)
-            
             error_phi = self.attitude[0] - x[6,k]
             error_theta = self.attitude[1] - x[7,k]
             error_psi = self.attitude[2] - x[8,k]
@@ -335,7 +372,7 @@ class Controller:
             motor_speeds = [motor_torque_1, motor_torque_2, motor_torque_3, motor_torque_4]
 
             for i in range(4):
-                 motor_speeds[i] = np.clip(motor_speeds[i]*kt, 0, 3.5)
+                 motor_speeds[i] = np.clip(motor_speeds[i]*kt, 0, 3.25)
                  motor_speeds[i] /=kt
             #motor_speeds = np.array(motor_speeds) * (2*np.pi/60)**2
             
@@ -361,13 +398,13 @@ class Controller:
 # March through time array and numerically solve for vehicle states
 #vertvel = np.array([0,0,1] + 9*[0])
 cont = Controller()
-for k in range(0, np.size(t) - 1): 
+for k in range(0, np.size(t) -1): 
         
     # Determine control inputs based on current state
     #wu[:,k] = controlInputs(x[:,k], t[k])
     
     # Predict state after one time step
-    print(x[9:,k])
+    #print(x[9:,k])
     mag_angle_des = np.linalg.norm(x[6:9,k])
             
     if mag_angle_des > max_angle:
@@ -380,9 +417,8 @@ for k in range(0, np.size(t) - 1):
     #    u[:,k] = 117.3
     #print(u[:,k])
     x[:,k+1] = RK4(x[:,k], u[:,k], tstep)
-    #x[11,k+1] = x[11,k] - x[2,k+1]*tstep
-    #pos[:,k+1] = pos[:,k] + x[:3,k+1]*tstep
-    #print(x[9:,k])
+
+    print(x[9:,k])
     #if  x[11,k+1] <= 0 :
     #    x[11,k+1] =0
     #print(tau[:,k])
@@ -394,7 +430,9 @@ for k in range(0, np.size(t) - 1):
 plt.figure(1, figsize=(8,8))
 plt.subplot(311)
 plt.plot(t,x[9,:],'r',label='x')
+plt.plot(t,pos[0,:],'y',label='x_ref')
 plt.plot(t,x[10,:],'b',label='y')
+plt.plot(t,pos[1,:],color =[0.0, 0.0, 0.0],label='y_ref')
 plt.plot(t,x[11,:],'g',label='z')
 
 #plt.ylim(-1, 10)
@@ -446,29 +484,19 @@ plt.xlabel('Time (sec)')
 plt.ylabel('Propeller RPM')
 plt.legend(loc='best')
 plt.title('Time History of Control Inputs')
-"""
+
+
 plt.figure(4, figsize=(8,8))
-plt.plot(t,tu[1,:],'b',label='torque_x')
-plt.plot(t,tu[2,:],'g',label='torque_y')
-plt.plot(t,tu[3,:],'y',label='torque_z')
-#plt.xlim(0, 1)
-plt.xlabel('Time (sec)')
-plt.ylabel('tau')
-plt.legend(loc='best')
-plt.title('Time History of Control Inputs')
-"""
-"""
-plt.figure(4, figsize=(8,8))
-plt.plot(t,pos[0,:],'r',label='x')
-plt.plot(t,pos[1,:],'b',label='y')
-plt.plot(t,pos[1,:],'g',label='z')
+plt.plot(t,speeds[0,:],'r',label='u')
+plt.plot(t,speeds[1,:],'b',label='v')
+plt.plot(t,speeds[2,:],'g',label='w')
 #plt.xlim(0, 10)
 #plt.ylim(-10, 2)
 plt.xlabel('Time (sec)')
 plt.ylabel('m')
 plt.legend(loc='best')
-plt.title('xyz cordinate')
-"""
+plt.title('uvw speeds')
+
 plt.figure(5, figsize=(8,8))
 plt.plot(t,tu[0,:],'r',label='thrust')
 #plt.xlim(0, 1)
@@ -497,7 +525,14 @@ plt.ylabel('Propeller Thrust')
 plt.legend(loc='best')
 plt.title('Time History of Control Inputs')
 
-
+"""
+plt.figure(8, figsize=(8,8))
+plt.plot(t,x[9,:],'r',label='x')
+plt.plot(t,pos[0,:],'y',label='x_ref')
+plt.plot(t,x[10,:],'b',label='y')
+plt.plot(t,pos[1,:],color =[0.0, 0.0, 0.0],label='y_ref')
+plt.plot(t,x[11,:],'g',label='z')
+"""
 
 
 plt.show()
