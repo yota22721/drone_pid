@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.02            # Sampling time (sec)
-simulation_time = 6# Length of time to run simulation (sec)
+simulation_time = 5# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle = math.pi*7/36
 
@@ -39,8 +39,8 @@ th = np.zeros((4,np.size(t)))
 pos = np.zeros((3,np.size(t)))
 speeds = np.zeros((3,np.size(t)))
 # Initial height
-x[6,0] = -max_angle/40
-x[7,0] = max_angle/40
+#x[6,0] = -max_angle/40
+#x[7,0] = max_angle/40
 #x[8,0] = 0
 
 x[9,0] = 1.0
