@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.02            # Sampling time (sec)
-simulation_time =5 # Length of time to run simulation (sec)
+simulation_time = 6# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle = math.pi*7/36
 
@@ -27,9 +27,9 @@ n_inputs = 4   # Number of inputs
 R = 0.12
 A = np.pi * R **2
 
-kt = 7.6184*10**(-8)
-bt = 2.6839*10**(-9)
-cq = 2.6839*10**(-9)
+kt = 1.12896e-07# 0.1*1.225*(2*0.12)**4/3600
+bt = 1.354752e-8#0.05*1.225*(2*0.12)**5/3600
+cq = bt
 
 # Initialize State Conditions
 x = np.zeros((n_states,np.size(t)))  # time history of state vectors
@@ -39,8 +39,8 @@ th = np.zeros((4,np.size(t)))
 pos = np.zeros((3,np.size(t)))
 speeds = np.zeros((3,np.size(t)))
 # Initial height
-#x[6,0] = -0.784
-#x[7,0] = 0.784
+x[6,0] = -max_angle/40
+x[7,0] = max_angle/40
 #x[8,0] = 0
 
 x[9,0] = 1.0
@@ -199,13 +199,7 @@ def stateDerivative(x, u):
     x_dot[10] = cthe * spsi * ub +(cphi *cpsi + sphi * sthe *spsi) * vb + \
                     (-sphi*cpsi + cphi*sthe*spsi) *wb #yE_dot
     x_dot[11] =  -1 * (-sthe * ub + sphi*cthe * vb + cphi*cthe *wb) #hE_dot
-    """
-    x_dot[9] = cthe*cpsi*ub + cthe*spsi*vb - sthe*wb
-    x_dot[10] = (sphi*sthe*cpsi - cphi*spsi)*ub + (sphi*sthe*psi + cphi*cpsi)*vb +\
-                sphi*cthe*wb
-    x_dot[11] = ((cphi*sthe*cpsi + sphi*spsi)*ub + (cphi*sthe*spsi - sphi*cpsi)*vb +\
-                cphi*cthe*wb)
-    """
+
     #x_dot[9] = ub
     #x_dot[10] = vb
     #x_dot[11] = wb
@@ -267,15 +261,15 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [0.1, 0.1, 0.1] # proportional [x,y,z]
+        Kp_pos = [0.2, 0.14, 0.1] # proportional [x,y,z]
         Ki_pos = [0.001, 0.001, 0.001]  # integral [x,y,z]
-        Kd_pos = [0.0, 0.0, 0.01] # derivative [x,y,z]
+        Kd_pos = [0.01, 0.01, 0.01] # derivative [x,y,z]
 
         # Gains for angle controller
-        Kp_ang= [0.3, 0.3, 0.11] # proportional [x,y,z]
+        Kp_ang= [0.03, 0.03, 0.11] # proportional [x,y,z]
         Ki_ang = [0.001, 0.001, 0.001]  # integral [x,y,z]
         Kd_ang = [0., 0, 0] # derivative [x,y,z]
-        self.position = np.array([0.0, 0.0, 0.45])
+        self.position = np.array([0, 0, 0.45])
         self.attitude = np.array([0.0, 0.0, 0.0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
         self.outer_pid_y = PID(Kp_pos[1], Ki_pos[1], Kd_pos[1], 0.02)
@@ -304,16 +298,18 @@ class Controller:
             speeds[2,k] =  -1 * (-sthe * ub + sphi*cthe * vb + cphi*cthe *wb) #hE_dot
             #self.position[0] = np.clip(-x[9,0]*(k+1)/300 +x[9,0],0,np.inf)
             #self.position[1] = np.clip(-x[10,0]*(k+1)/300 +x[10,0],0,np.inf)
-            if k+1 <= 6/0.02:
-                self.position[0] =(x[9,0]/(6/0.02)**2)*((k+1)-6/0.02)**2
-                self.position[1] =(x[10,0]/(6/0.02)**2)*((k+1)-6/0.02)**2
+            """
+            if k+100 <= 6/0.02:
+                self.position[0] =(x[9,0]/(6/0.02)**2)*((k+100)-6/0.02)**2
+                self.position[1] =(x[10,0]/(6/0.02)**2)*((k+100)-6/0.02)**2
             else:
                 self.position[0] = 0
                 self.position[1] = 0
+            """
             #print(self.position)
             #print("k ="+ str(k))
-            pos[0,k] = self.position[0]
-            pos[1,k] = self.position[1]
+            #pos[0,k] = self.position[0]
+            #pos[1,k] = self.position[1]
             error_x = self.position[0] - x[9,k]
             error_y = self.position[1] - x[10,k]
             error_z = self.position[2] - x[11,k]
@@ -333,11 +329,7 @@ class Controller:
             #self.attitude[1] = -1*(ud*np.cos(x[8,k])+vd*np.sin(x[8,k]))
             self.attitude[0] = ux
             self.attitude[1] = -uy
-            #self.attitude[0] = np.arcsin((ux*np.sin(x[8,k])) - uy*np.cos(x[8,k])/(ux**2 + uy**2 + (uz+g)**2))
-            #self.attitude[1] = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
-            #self.attitude[0] = t_phi
-            #self.attitude[1] = t_theta
-            #self.attitude[2] = t_psi
+
             
             mag_angle_des = np.linalg.norm(self.attitude)
             
@@ -430,9 +422,9 @@ for k in range(0, np.size(t) -1):
 plt.figure(1, figsize=(8,8))
 plt.subplot(311)
 plt.plot(t,x[9,:],'r',label='x')
-plt.plot(t,pos[0,:],'y',label='x_ref')
+#plt.plot(t,pos[0,:],'y',label='x_ref')
 plt.plot(t,x[10,:],'b',label='y')
-plt.plot(t,pos[1,:],color =[0.0, 0.0, 0.0],label='y_ref')
+#plt.plot(t,pos[1,:],color =[0.0, 0.0, 0.0],label='y_ref')
 plt.plot(t,x[11,:],'g',label='z')
 
 #plt.ylim(-1, 10)
