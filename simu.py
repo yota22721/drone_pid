@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.02            # Sampling time (sec)
-simulation_time = 5# Length of time to run simulation (sec)
+simulation_time = 30# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle = math.pi*7/36
 
@@ -231,13 +231,13 @@ class PID:
         self.integral = 0
         self.p_error = 0
         self.p_output = 0
-        self.p_prop = 0
+        self.p_deriv = 0
 
     def update(self, error, dt):
         
         self.integral +=error*dt
         derrivative =(error - self.p_error)/dt
-        output = self.kp * error + self.ki * self.integral - self.kd *derrivative
+        output = self.kp * error + self.ki * self.integral + self.kd *derrivative
         self.p_error = error
         self.p_output = output
         """
@@ -251,24 +251,23 @@ class PID:
         return self.p_output
     
     def pd(self, error, dt):
-        self.integral +=error*dt
-        prop = (error - self.p_error)/dt
-        #deriv = (prop - self.p_prop)/dt
-        du =  self.kp * prop + self.ki * self.integral- self.kd * prop
+        deriv = (error - self.p_error)/dt
+        prop = (deriv - self.p_deriv)/dt
+        du =  self.kp * error +self.ki*prop + self.kd * deriv 
         self.p_error = error
-        #self.p_prop = prop
+        self.p_deriv = deriv
         self.p_output = du
         return self.p_output
 class Controller:
     def __init__(self):
         Kp_pos = [0.2, 0.14, 0.1] # proportional [x,y,z]
-        Ki_pos = [0.001, 0.001, 0.001]  # integral [x,y,z]
+        Ki_pos = [0.00, 0.00, 0.001]  # integral [x,y,z]
         Kd_pos = [0.01, 0.01, 0.01] # derivative [x,y,z]
 
         # Gains for angle controller
         Kp_ang= [0.03, 0.03, 0.11] # proportional [x,y,z]
         Ki_ang = [0.001, 0.001, 0.001]  # integral [x,y,z]
-        Kd_ang = [0., 0, 0] # derivative [x,y,z]
+        Kd_ang = [0.001, 0.001, 0.001] # derivative [x,y,z]
         self.position = np.array([0, 0, 0.45])
         self.attitude = np.array([0.0, 0.0, 0.0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
@@ -310,25 +309,32 @@ class Controller:
             #print("k ="+ str(k))
             #pos[0,k] = self.position[0]
             #pos[1,k] = self.position[1]
+            """
+            if x[11, k] < 0.5:
+                self.position[1] = x[9,k]
+                self.position[1] = x[10,k]
+                self.position[2] = 0
+            """
             error_x = self.position[0] - x[9,k]
             error_y = self.position[1] - x[10,k]
             error_z = self.position[2] - x[11,k]
-            ud = error_x*np.cos(x[8,k]) + error_y*np.sin(x[8,k])
-            vd = error_y*np.cos(x[8,k]) - error_x*np.sin(x[8,k])
+            #ud = error_x*np.cos(x[8,k]) + error_y*np.sin(x[8,k])
+            #vd = error_y*np.cos(x[8,k]) - error_x*np.sin(x[8,k])
             print("speeds")
             print(x[:3,k])
-            print([ud,vd,error_z])
-            #if x[11, k] < 0.454:
-            #    self.position[2] = 0
-            error_ud = ud - x[0,k]
-            error_vd = vd - x[1,k]
-            ux = self.outer_pid_x.update(error_ud, dt)
-            uy = self.outer_pid_y.update(error_vd,dt)
-            uz = self.inner_pid_z.update(error_z,dt)
+            #print([ud,vd,error_z])
+                
+            #error_ud = ud - x[0,k]
+            #error_vd = vd - x[1,k]
+            ux = self.outer_pid_x.pd(error_x, dt)
+            uy = self.outer_pid_y.pd(error_y,dt)
+            uz = self.inner_pid_z.pd(error_z,dt)
+            dphi = np.arcsin((ux*np.sin(x[8,k])-uy*np.cos(x[8,k]))/(ux**2+uy**2+(uz+g)**2))
+            dtheta = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
             #self.attitude[0] = ud*np.sin(x[8,k])-vd*np.cos(x[8,k])
             #self.attitude[1] = -1*(ud*np.cos(x[8,k])+vd*np.sin(x[8,k]))
-            self.attitude[0] = ux
-            self.attitude[1] = -uy
+            self.attitude[0] = dphi
+            self.attitude[1] = -dtheta
 
             
             mag_angle_des = np.linalg.norm(self.attitude)
@@ -342,7 +348,9 @@ class Controller:
             error_phi = self.attitude[0] - x[6,k]
             error_theta = self.attitude[1] - x[7,k]
             error_psi = self.attitude[2] - x[8,k]
-            thrust = np.clip((g+uz)*m/(np.cos(x[7,k])*np.cos(x[6,k])),0.0,13)
+            T = m*(ux*(np.sin(x[7,k])*np.cos(x[8,k])*np.cos(x[6,k])+np.sin(x[6,k])*np.sin(x[8,k]))+uy*(np.sin(x[7,k])*np.sin(x[8,k])*np.cos(x[6,k])-np.cos(x[8,k])*np.sin(x[6,k]))+(uz+g)*np.cos(x[7,k])*np.cos(x[6,k]))
+            thrust = np.clip(T,0.0,13)
+            #thrust = np.clip((g+uz)*m/(np.cos(x[7,k])*np.cos(x[6,k])),0.0,13)
             torque_x = self.inner_pid_phi.update(error_phi,dt)*Ixx
             torque_y = self.inner_pid_psi.update(error_theta,dt)*Iyy
             torque_z = self.inner_pid_theta.update(error_psi,dt)*Izz
