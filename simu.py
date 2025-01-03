@@ -262,13 +262,13 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [2, 4, 0.03] # proportional [x,y,z]
-        Ki_pos = [0.00, 0.00, 0.001]  # integral [x,y,z]
+        Kp_pos = [2.2, 4, 0.03] # proportional [x,y,z]
+        Ki_pos = [0.00, 0.01, 0.001]  # integral [x,y,z]
         Kd_pos = [0.001, 0.001, 0.006] # derivative [x,y,z]
 
         # Gains for angle controller
-        Kp_ang= [0.5, 0.5, 0.11] # proportional [x,y,z]
-        Ki_ang = [0.001, 0.001, 0.001]  # integral [x,y,z]
+        Kp_ang= [0.7, 0.5, 0.11] # proportional [x,y,z]
+        Ki_ang = [0.1, 0.001, 0.001]  # integral [x,y,z]
         Kd_ang = [0.001, 0.001, 0.001] # derivative [x,y,z]
         self.position = np.array([0, 0, 0.5])
         self.attitude = np.array([0.0, 0.0, 0.0])
