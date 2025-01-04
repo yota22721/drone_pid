@@ -17,9 +17,9 @@ DTR = 1/57.3; RTD = 57.3
 tstep = 0.02            # Sampling time (sec)
 simulation_time = 30# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
-max_angle_x = math.pi*0.4/180
-max_angle_y = math.pi*0.1/180
-max_angle_z = math.pi*60/180
+max_angle_x = math.pi*0.8/180
+max_angle_y = math.pi*0.8/180
+max_angle_z = math.pi*30/180
 
 
 # Model size
@@ -267,7 +267,7 @@ class Controller:
         Kd_pos = [0.001, 0.001, 0.006] # derivative [x,y,z]
 
         # Gains for angle controller
-        Kp_ang= [0.7, 0.5, 0.11] # proportional [x,y,z]
+        Kp_ang= [0.7, 0.5, 0.1] # proportional [x,y,z]
         Ki_ang = [0.1, 0.001, 0.001]  # integral [x,y,z]
         Kd_ang = [0.001, 0.001, 0.001] # derivative [x,y,z]
         self.position = np.array([0, 0, 0.5])
@@ -333,10 +333,14 @@ class Controller:
             uz = self.inner_pid_z.update(error_z,dt)
             dphi = np.arcsin((ux*np.sin(x[8,k])-uy*np.cos(x[8,k]))/(ux**2+uy**2+(uz+g)**2))
             dtheta = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
+            dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             #self.attitude[0] = ud*np.sin(x[8,k])-vd*np.cos(x[8,k])
             #self.attitude[1] = -1*(ud*np.cos(x[8,k])+vd*np.sin(x[8,k]))
+            #self.attitude[0] = ux
+            #self.attitude[1] = -uy
             self.attitude[0] = -dphi
             self.attitude[1] = -dtheta
+            self.attitude[2] = dpsi
 
             
             
@@ -461,7 +465,7 @@ plt.title('Time History of Height, X Position, and Pitch')
 plt.subplot(312)
 plt.plot(t,tu[1,:],'r',label='torque_x')
 plt.plot(t,tu[2,:],'b',label='torque_y')
-plt.plot(t,tu[3,:],'g',label='torque_z')
+#plt.plot(t,tu[3,:],'g',label='torque_z')
 #plt.plot(t,x[9,:],'r',label='x')
 #plt.xlim(0, 1)
 plt.legend(loc='best')
@@ -472,7 +476,7 @@ plt.ylabel('tau (m)')
 plt.subplot(313)
 plt.plot(t,x[6,:]*RTD,'r',label='phi')
 plt.plot(t,x[7,:]*RTD,'b',label='theta')
-plt.plot(t,x[8,:]*RTD,'g',label='psi')
+#plt.plot(t,x[8,:]*RTD,'g',label='psi')
 #plt.xlim(0, 3)
 plt.legend(loc='best')
 plt.ylabel('(deg)')
