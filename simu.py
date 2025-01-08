@@ -17,9 +17,9 @@ DTR = 1/57.3; RTD = 57.3
 tstep = 0.02            # Sampling time (sec)
 simulation_time = 30# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
-max_angle_x = math.pi*0.4/180
-max_angle_y = math.pi*0.4/180
-max_angle_z = math.pi*30/180
+max_angle_x = math.pi*0.7/180
+max_angle_y = math.pi*0.8/180
+max_angle_z = math.pi*20/180
 
 
 # Model size
@@ -262,14 +262,15 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [4, 5, 0.03] # proportional [x,y,z]
-        Ki_pos = [0.08, 0.04, 0.0001]  # integral [x,y,z]
-        Kd_pos = [0.04, 0.001, 0.0] # derivative [x,y,z]
+        Kp_pos = [3, 4, 0.03] # proportional [x,y,z]
+        Ki_pos = [0.04, 0.04, 0.0001]  # integral [x,y,z]
+        Kd_pos = [0.001, 0.001, 0.0] # derivative [x,y,z]
 
-        # Gains for angle controller
-        Kp_ang= [0.5, 0.2, 0.1] # proportional [x,y,z]
-        Ki_ang = [0.1, 0.001, 0.001]  # integral [x,y,z]
-        Kd_ang = [0.001, 0.005, 0.001] # derivative [x,y,z]
+        # Gains for 
+        # angle controller
+        Kp_ang= [3, 3, 0.1] # proportional [x,y,z]
+        Ki_ang = [0.01, 0.001, 0.001]  # integral [x,y,z]
+        Kd_ang = [0.001, 0.001, 0.001] # derivative [x,y,z]
         self.position = np.array([0, 0, 0.5])
         self.attitude = np.array([0.0, 0.0, 0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
@@ -311,12 +312,12 @@ class Controller:
             #print("k ="+ str(k))
             #pos[0,k] = self.position[0]
             #pos[1,k] = self.position[1]
-            
+            """
             if x[11, k] < 0.45:
                 #self.position[1] = x[9,k]
                 #self.position[1] = x[10,k]
                 self.position[2] = 0
-            
+            """
             error_x = self.position[0] - x[9,k]
             error_y = self.position[1] - x[10,k]
             error_z = self.position[2] - x[11,k]
@@ -331,15 +332,17 @@ class Controller:
             ux = self.outer_pid_x.update(error_x, dt)
             uy = self.outer_pid_y.update(error_y,dt)
             uz = self.inner_pid_z.update(error_z,dt)
+            dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
+            #dpsi = np.arccos((np.abs(self.position[1] - x[10,k]))/np.sqrt(((self.position[0]-x[9,k])**2+ (self.position[1]-x[10,k])**2 + (self.position[2]-x[11,k])**2)))
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
-            #dpsi = np.arccos(np.abs((self.position[1]-x[10,k]))/np.sqrt(((self.position[0]-x[9,k])**2+ (self.position[1]-x[10,k])**2 + (self.position[2]-x[11,k])**2)))
+            #dpsi = np.sin(k)+np.cos(k)
             #global RTD
             #print(dpsi*RTD)
-            #dpsi = np.arccos(ux/np.sqrt(ux**2+uy**2+(uz+g)**2))
-            dphi = np.arcsin((ux*np.sin(x[8,k])-uy*np.cos(x[8,k]))/(ux**2+uy**2+(uz+g)**2))
-            dtheta = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
-            #dphi = np.arcsin((ux*np.sin(dpsi)-uy*np.cos(dpsi))/(ux**2+uy**2+(uz+g)**2))
-            #dtheta = np.arctan((ux*np.cos(dpsi)+uy*np.sin(dpsi))/(uz+g))
+            #dpsi = np.arccos(ux/np.sqrt(ux**2+uy**2))
+            #dphi = np.arcsin((ux*np.sin(x[8,k])-uy*np.cos(x[8,k]))/(ux**2+uy**2+(uz+g)**2))
+            #dtheta = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
+            dphi = np.arcsin((ux*np.sin(dpsi)-uy*np.cos(dpsi))/(ux**2+uy**2+(uz+g)**2))
+            dtheta = np.arctan((ux*np.cos(dpsi)+uy*np.sin(dpsi))/(uz+g))
             
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             #self.attitude[0] = ud*np.sin(x[8,k])-vd*np.cos(x[8,k])
@@ -348,7 +351,7 @@ class Controller:
             #self.attitude[1] = -uy
             self.attitude[0] = -dphi
             self.attitude[1] = -dtheta
-            #self.attitude[2] = dpsi
+            self.attitude[2] = dpsi
 
             
             
@@ -373,15 +376,7 @@ class Controller:
             torque_x = self.inner_pid_phi.update(error_phi,dt)*Ixx
             torque_y = self.inner_pid_psi.update(error_theta,dt)*Iyy
             torque_z = self.inner_pid_theta.update(error_psi,dt)*Izz
-            """
-            mag_angle_des = np.linalg.norm([torque_x, torque_y, torque_z])
-            if mag_angle_des > 0.5e-6:
-                torque_x = (torque_x / mag_angle_des) * 0.5e-6
-            if mag_angle_des > 0.5e-6:
-                torque_y = (torque_y / mag_angle_des) * 0.5e-6
-            if mag_angle_des > 0.5e-6:
-                torque_z = (torque_z / mag_angle_des) * 0.5e-6
-            """
+
             #torque_z = 0
             #x[6,k] +=0.0001*k
             global tu
@@ -433,13 +428,6 @@ for k in range(0, np.size(t) -1):
     
     # Predict state after one time step
     #print(x[9:,k])
-    #mag_angle_des = np.linalg.norm(x[6:9,k])
-            
-    #if mag_angle_des > max_angle:
-    #    x[6:9,k] = (x[6:9,k] / mag_angle_des) * max_angle
-    #print("-------------")
-    #print(u[:,k])
-    #print("L "+ str(tau[0,k])+ " M "+str(tau[1,k])+" N "+str(tau[2,k]))
     u = cont.controller(u,x,k,tstep)
     #if k == 0:
     #    u[:,k] = 117.3
@@ -447,8 +435,8 @@ for k in range(0, np.size(t) -1):
     x[:,k+1] = RK4(x[:,k], u[:,k], tstep)
 
     #print(x[9:,k])
-    if  x[11,k+1] <= 0 :
-        x[11,k+1] =0
+    #if  x[11,k+1] <= 0 :
+    #    x[11,k+1] =0
     #print(tau[:,k])
     #if x[11,k+1] < 0.0:
     #    break
@@ -458,9 +446,7 @@ for k in range(0, np.size(t) -1):
 plt.figure(1, figsize=(8,8))
 plt.subplot(311)
 plt.plot(t,x[9,:],'r',label='x')
-#plt.plot(t,pos[0,:],'y',label='x_ref')
 plt.plot(t,x[10,:],'b',label='y')
-#plt.plot(t,pos[1,:],color =[0.0, 0.0, 0.0],label='y_ref')
 plt.plot(t,x[11,:],'g',label='z')
 
 #plt.ylim(-1, 10)
@@ -552,15 +538,6 @@ plt.xlabel('Time (sec)')
 plt.ylabel('Propeller Thrust')
 plt.legend(loc='best')
 plt.title('Time History of Control Inputs')
-
-"""
-plt.figure(8, figsize=(8,8))
-plt.plot(t,x[9,:],'r',label='x')
-plt.plot(t,pos[0,:],'y',label='x_ref')
-plt.plot(t,x[10,:],'b',label='y')
-plt.plot(t,pos[1,:],color =[0.0, 0.0, 0.0],label='y_ref')
-plt.plot(t,x[11,:],'g',label='z')
-"""
 
 
 plt.show()
