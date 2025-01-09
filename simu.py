@@ -223,6 +223,16 @@ def RK4(x,u,dt):
     
     return x_next
 
+def Huristic(a,b,t):
+    t = t*0.02
+    f = 0
+    if 0<=t and t <= b:
+        f = a*np.sin(np.pi*t/b)
+    elif b <=t and t <=3*b:
+        f = -a*np.sin(np.pi*t/b - np.pi)
+    elif 3*b <=t and t <=4*b:
+        f = a*np.sin(np.pi*t/b - 3*np.pi)
+    return f
 
 class PID:
     def __init__(self, kp, ki, kd, dt):
@@ -268,7 +278,7 @@ class Controller:
 
         # Gains for 
         # angle controller
-        Kp_ang= [3, 3, 0.1] # proportional [x,y,z]
+        Kp_ang= [3, 4, 0.1] # proportional [x,y,z]
         Ki_ang = [0.01, 0.001, 0.001]  # integral [x,y,z]
         Kd_ang = [0.001, 0.001, 0.001] # derivative [x,y,z]
         self.position = np.array([0, 0, 0.5])
@@ -332,17 +342,18 @@ class Controller:
             ux = self.outer_pid_x.update(error_x, dt)
             uy = self.outer_pid_y.update(error_y,dt)
             uz = self.inner_pid_z.update(error_z,dt)
-            dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
-            #dpsi = np.arccos((np.abs(self.position[1] - x[10,k]))/np.sqrt(((self.position[0]-x[9,k])**2+ (self.position[1]-x[10,k])**2 + (self.position[2]-x[11,k])**2)))
+            #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
+            dpsi = np.arccos((np.abs(self.position[1] - x[10,k]))/np.sqrt(((self.position[0]-x[9,k])**2+ (self.position[1]-x[10,k])**2 + (self.position[2]-x[11,k])**2)))
+            #dpsi = Huristic(1,0.5,k)
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             #dpsi = np.sin(k)+np.cos(k)
             #global RTD
             #print(dpsi*RTD)
             #dpsi = np.arccos(ux/np.sqrt(ux**2+uy**2))
-            #dphi = np.arcsin((ux*np.sin(x[8,k])-uy*np.cos(x[8,k]))/(ux**2+uy**2+(uz+g)**2))
-            #dtheta = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
-            dphi = np.arcsin((ux*np.sin(dpsi)-uy*np.cos(dpsi))/(ux**2+uy**2+(uz+g)**2))
-            dtheta = np.arctan((ux*np.cos(dpsi)+uy*np.sin(dpsi))/(uz+g))
+            dphi = np.arcsin((ux*np.sin(x[8,k])-uy*np.cos(x[8,k]))/(ux**2+uy**2+(uz+g)**2))
+            dtheta = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
+            #dphi = np.arcsin((ux*np.sin(dpsi)-uy*np.cos(dpsi))/(ux**2+uy**2+(uz+g)**2))
+            #dtheta = np.arctan((ux*np.cos(dpsi)+uy*np.sin(dpsi))/(uz+g))
             
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             #self.attitude[0] = ud*np.sin(x[8,k])-vd*np.cos(x[8,k])
