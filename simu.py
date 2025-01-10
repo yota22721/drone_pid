@@ -232,6 +232,7 @@ def Huristic(a,b,t):
         f = -a*np.sin(np.pi*t/b - np.pi)
     elif 3*b <=t and t <=4*b:
         f = a*np.sin(np.pi*t/b - 3*np.pi)
+    #f = t*1.2
     return f
 
 class PID:
@@ -244,13 +245,15 @@ class PID:
         self.p_error = 0
         self.p_output = 0
         self.p_deriv = 0
+        self.p_y = 0
 
-    def update(self, error, dt):
-        
+    def update(self, ref, y, dt):
+        error = ref - y
         self.integral +=error*dt
-        derrivative =(error - self.p_error)/dt
-        output = self.kp * error + self.ki * self.integral - self.kd *derrivative
+        derrivative =(y - self.p_y)/dt
+        output = -self.kp * y + self.ki * self.integral - self.kd *derrivative
         self.p_error = error
+        self.p_y = y
         self.p_output = output
         """
         prop = error - self.p_error
@@ -272,13 +275,13 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [3, 4, 0.03] # proportional [x,y,z]
+        Kp_pos = [3, 3, 0.02] # proportional [x,y,z]
         Ki_pos = [0.04, 0.04, 0.0001]  # integral [x,y,z]
         Kd_pos = [0.001, 0.001, 0.0] # derivative [x,y,z]
 
         # Gains for 
         # angle controller
-        Kp_ang= [3, 4, 0.1] # proportional [x,y,z]
+        Kp_ang= [3, 3, 0.1] # proportional [x,y,z]
         Ki_ang = [0.01, 0.001, 0.001]  # integral [x,y,z]
         Kd_ang = [0.001, 0.001, 0.001] # derivative [x,y,z]
         self.position = np.array([0, 0, 0.5])
@@ -310,14 +313,6 @@ class Controller:
             speeds[2,k] =  -1 * (-sthe * ub + sphi*cthe * vb + cphi*cthe *wb) #hE_dot
             #self.position[0] = np.clip(-x[9,0]*(k+1)/300 +x[9,0],0,np.inf)
             #self.position[1] = np.clip(-x[10,0]*(k+1)/300 +x[10,0],0,np.inf)
-            """
-            if k+100 <= 6/0.02:
-                self.position[0] =(x[9,0]/(6/0.02)**2)*((k+100)-6/0.02)**2
-                self.position[1] =(x[10,0]/(6/0.02)**2)*((k+100)-6/0.02)**2
-            else:
-                self.position[0] = 0
-                self.position[1] = 0
-            """
             #print(self.position)
             #print("k ="+ str(k))
             #pos[0,k] = self.position[0]
@@ -339,16 +334,14 @@ class Controller:
                 
             #error_ud = ud - x[0,k]
             #error_vd = vd - x[1,k]
-            ux = self.outer_pid_x.update(error_x, dt)
-            uy = self.outer_pid_y.update(error_y,dt)
-            uz = self.inner_pid_z.update(error_z,dt)
+            ux = self.outer_pid_x.update(self.position[0],x[9,k], dt)
+            uy = self.outer_pid_y.update(self.position[1],x[10,k],dt)
+            uz = self.inner_pid_z.update(self.position[2],x[11,k],dt)
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             dpsi = np.arccos((np.abs(self.position[1] - x[10,k]))/np.sqrt(((self.position[0]-x[9,k])**2+ (self.position[1]-x[10,k])**2 + (self.position[2]-x[11,k])**2)))
-            #dpsi = Huristic(1,0.5,k)
+            #dpsi = Huristic(0.08,0.01,k)
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             #dpsi = np.sin(k)+np.cos(k)
-            #global RTD
-            #print(dpsi*RTD)
             #dpsi = np.arccos(ux/np.sqrt(ux**2+uy**2))
             dphi = np.arcsin((ux*np.sin(x[8,k])-uy*np.cos(x[8,k]))/(ux**2+uy**2+(uz+g)**2))
             dtheta = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
@@ -384,9 +377,9 @@ class Controller:
             #T = m*(ux*(np.sin(x[7,k])*np.cos(x[8,k])*np.cos(x[6,k])+np.sin(x[6,k])*np.sin(x[8,k]))+uy*(np.sin(x[7,k])*np.sin(x[8,k])*np.cos(x[6,k])-np.cos(x[8,k])*np.sin(x[6,k]))+(uz+g)*np.cos(x[7,k])*np.cos(x[6,k]))
             #thrust = np.clip(T,0.0,13)
             thrust = np.clip((g+uz)*m/(np.cos(x[7,k])*np.cos(x[6,k])),0.0,13)
-            torque_x = self.inner_pid_phi.update(error_phi,dt)*Ixx
-            torque_y = self.inner_pid_psi.update(error_theta,dt)*Iyy
-            torque_z = self.inner_pid_theta.update(error_psi,dt)*Izz
+            torque_x = self.inner_pid_phi.update(self.attitude[0],x[6,k],dt)*Ixx
+            torque_y = self.inner_pid_psi.update(self.attitude[1],x[7,k],dt)*Iyy
+            torque_z = self.inner_pid_theta.update(self.attitude[2],x[8,k],dt)*Izz
 
             #torque_z = 0
             #x[6,k] +=0.0001*k
@@ -438,7 +431,7 @@ for k in range(0, np.size(t) -1):
     #wu[:,k] = controlInputs(x[:,k], t[k])
     
     # Predict state after one time step
-    #print(x[9:,k])
+    print(x[9:,k])
     u = cont.controller(u,x,k,tstep)
     #if k == 0:
     #    u[:,k] = 117.3
