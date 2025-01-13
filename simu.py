@@ -15,11 +15,11 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.02            # Sampling time (sec)
-simulation_time = 120# Length of time to run simulation (sec)
+simulation_time = 60# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*1.2/180
 max_angle_y = math.pi*0.8/180
-max_angle_z = math.pi*45/180
+max_angle_z = math.pi*40/180
 
 
 # Model size
@@ -536,9 +536,9 @@ axes.set_title('Flight Path')
 axes.set_xlabel('x (m)')
 axes.set_ylabel('y (m)')
 axes.set_zlabel('z (m)')
-axes.set_xlim(0,1.8)
-axes.set_ylim(-1,1.5)
-axes.set_zlim(0,1.6)
+#axes.set_xlim(0,1.8)
+#axes.set_ylim(-1,1.5)
+#axes.set_zlim(0,1.6)
 
 plt.figure(7, figsize=(8,4))
 plt.plot(t[0:-1],th[0,0:-1],'b',label='T1')
