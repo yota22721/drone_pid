@@ -17,9 +17,9 @@ DTR = 1/57.3; RTD = 57.3
 tstep = 0.02            # Sampling time (sec)
 simulation_time = 30# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
-max_angle_x = math.pi*0.7/180
+max_angle_x = math.pi*1.2/180
 max_angle_y = math.pi*0.8/180
-max_angle_z = math.pi*20/180
+max_angle_z = math.pi*45/180
 
 
 # Model size
@@ -276,14 +276,14 @@ class PID:
 class Controller:
     def __init__(self):
         Kp_pos = [3, 3, 0.03] # proportional [x,y,z]
-        Ki_pos = [0.04, 0.04, 0.0001]  # integral [x,y,z]
-        Kd_pos = [0.001, 0.001, 0.0] # derivative [x,y,z]
+        Ki_pos = [0.04, 0.04, 0.00001]  # integral [x,y,z]
+        Kd_pos = [1.5, 1.5, 0.015] # derivative [x,y,z]
 
         # Gains for 
         # angle controller
-        Kp_ang= [3, 3, 0.1] # proportional [x,y,z]
-        Ki_ang = [0.01, 0.001, 0.001]  # integral [x,y,z]
-        Kd_ang = [0.001, 0.001, 0.001] # derivative [x,y,z]
+        Kp_ang= [4, 4, 2] # proportional [x,y,z]
+        Ki_ang = [0.01, 0.001, 0.05]  # integral [x,y,z]
+        Kd_ang = [2, 2, 1.1] # derivative [x,y,z]
         self.position = np.array([0, 0, 0.5])
         self.attitude = np.array([0.0, 0.0, 0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
@@ -317,12 +317,12 @@ class Controller:
             #print("k ="+ str(k))
             #pos[0,k] = self.position[0]
             #pos[1,k] = self.position[1]
-            """
+            
             if x[11, k] < 0.45:
                 #self.position[1] = x[9,k]
                 #self.position[1] = x[10,k]
                 self.position[2] = 0
-            """
+            
             error_x = self.position[0] - x[9,k]
             error_y = self.position[1] - x[10,k]
             error_z = self.position[2] - x[11,k]
@@ -343,10 +343,10 @@ class Controller:
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             #dpsi = np.sin(k)+np.cos(k)
             #dpsi = np.arccos(ux/np.sqrt(ux**2+uy**2))
-            dphi = np.arcsin((ux*np.sin(x[8,k])-uy*np.cos(x[8,k]))/(ux**2+uy**2+(uz+g)**2))
-            dtheta = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
-            #dphi = np.arcsin((ux*np.sin(dpsi)-uy*np.cos(dpsi))/(ux**2+uy**2+(uz+g)**2))
-            #dtheta = np.arctan((ux*np.cos(dpsi)+uy*np.sin(dpsi))/(uz+g))
+            #dphi = np.arcsin((ux*np.sin(x[8,k])-uy*np.cos(x[8,k]))/(ux**2+uy**2+(uz+g)**2))
+            #dtheta = np.arctan((ux*np.cos(x[8,k])+uy*np.sin(x[8,k]))/(uz+g))
+            dphi = np.arcsin((ux*np.sin(dpsi)-uy*np.cos(dpsi))/(ux**2+uy**2+(uz+g)**2))
+            dtheta = np.arctan((ux*np.cos(dpsi)+uy*np.sin(dpsi))/(uz+g))
             
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             #self.attitude[0] = ud*np.sin(x[8,k])-vd*np.cos(x[8,k])
@@ -431,16 +431,21 @@ for k in range(0, np.size(t) -1):
     #wu[:,k] = controlInputs(x[:,k], t[k])
     
     # Predict state after one time step
-    #print(x[9:,k])
+    print(x[9:,k])
     u = cont.controller(u,x,k,tstep)
     #if k == 0:
     #    u[:,k] = 117.3
     #print(u[:,k])
     x[:,k+1] = RK4(x[:,k], u[:,k], tstep)
+    #pos[:2,k+1] = pos[:2,k]+x[:2,k+1]*0.02
+    #pos[2,k+1] = pos[2,k]-x[2,k+1]*0.02
 
     #print(x[9:,k])
+    """
     if  x[11,k+1] <= 0 :
         x[11,k+1] =0
+        break
+    """
     #print(tau[:,k])
     #if x[11,k+1] < 0.0:
     #    break
@@ -531,6 +536,9 @@ axes.set_title('Flight Path')
 axes.set_xlabel('x (m)')
 axes.set_ylabel('y (m)')
 axes.set_zlabel('z (m)')
+axes.set_xlim(0,1.8)
+axes.set_ylim(-1,1.5)
+axes.set_zlim(0,1.6)
 
 plt.figure(7, figsize=(8,4))
 plt.plot(t[0:-1],th[0,0:-1],'b',label='T1')
@@ -542,7 +550,18 @@ plt.xlabel('Time (sec)')
 plt.ylabel('Propeller Thrust')
 plt.legend(loc='best')
 plt.title('Time History of Control Inputs')
-
+"""
+plt.figure(8, figsize=(8,8))
+plt.plot(t,pos[0,:],'r',label='x')
+plt.plot(t,pos[1,:],'b',label='y')
+plt.plot(t,pos[2,:],'g',label='z')
+#plt.xlim(0, 10)
+#plt.ylim(-10, 2)
+plt.xlabel('Time (sec)')
+plt.ylabel('m')
+plt.legend(loc='best')
+plt.title('position',y=-0.25)
+"""
 
 plt.show()
 
