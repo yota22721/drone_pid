@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.02            # Sampling time (sec)
-simulation_time = 30# Length of time to run simulation (sec)
+simulation_time = 120# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*1.2/180
 max_angle_y = math.pi*0.8/180
@@ -318,7 +318,7 @@ class Controller:
             #pos[0,k] = self.position[0]
             #pos[1,k] = self.position[1]
             
-            if x[11, k] < 0.45:
+            if x[11, k] < 0.5 and np.abs(x[9,k]) <0.1 and np.abs(x[10,k]) <0.1:
                 #self.position[1] = x[9,k]
                 #self.position[1] = x[10,k]
                 self.position[2] = 0
@@ -441,11 +441,11 @@ for k in range(0, np.size(t) -1):
     #pos[2,k+1] = pos[2,k]-x[2,k+1]*0.02
 
     #print(x[9:,k])
-    """
+    
     if  x[11,k+1] <= 0 :
         x[11,k+1] =0
         break
-    """
+    
     #print(tau[:,k])
     #if x[11,k+1] < 0.0:
     #    break
