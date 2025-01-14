@@ -15,10 +15,10 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.02            # Sampling time (sec)
-simulation_time = 60# Length of time to run simulation (sec)
+simulation_time = 40# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
-max_angle_x = math.pi*1.2/180
-max_angle_y = math.pi*0.8/180
+max_angle_x = math.pi*3/180
+max_angle_y = math.pi*1.5/180
 max_angle_z = math.pi*40/180
 
 
@@ -275,15 +275,15 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [3, 3, 0.03] # proportional [x,y,z]
-        Ki_pos = [0.04, 0.04, 0.00001]  # integral [x,y,z]
-        Kd_pos = [1.5, 1.5, 0.015] # derivative [x,y,z]
+        Kp_pos = [2, 3.5, 0.03] # proportional [x,y,z]
+        Ki_pos = [0.06, 0.06, 0.00001]  # integral [x,y,z]
+        Kd_pos = [14, 10, 0.06] # derivative [x,y,z]
 
         # Gains for 
         # angle controller
-        Kp_ang= [4, 4, 2] # proportional [x,y,z]
-        Ki_ang = [0.01, 0.001, 0.05]  # integral [x,y,z]
-        Kd_ang = [2, 2, 1.1] # derivative [x,y,z]
+        Kp_ang= [4, 4, 3] # proportional [x,y,z]
+        Ki_ang = [0.01, 0.01, 0.01]  # integral [x,y,z]
+        Kd_ang = [4, 4, 3] # derivative [x,y,z]
         self.position = np.array([0, 0, 0.5])
         self.attitude = np.array([0.0, 0.0, 0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
