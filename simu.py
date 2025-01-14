@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.02            # Sampling time (sec)
-simulation_time = 40# Length of time to run simulation (sec)
+simulation_time = 39.56# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*3/180
 max_angle_y = math.pi*1.5/180
@@ -275,9 +275,9 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [2, 3.5, 0.03] # proportional [x,y,z]
+        Kp_pos = [2, 6, 0.03] # proportional [x,y,z]
         Ki_pos = [0.06, 0.06, 0.00001]  # integral [x,y,z]
-        Kd_pos = [14, 10, 0.06] # derivative [x,y,z]
+        Kd_pos = [17, 15, 0.06] # derivative [x,y,z]
 
         # Gains for 
         # angle controller
