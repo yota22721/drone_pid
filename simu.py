@@ -19,7 +19,7 @@ simulation_time = 40# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*15/180
 max_angle_y = math.pi*5/180
-max_angle_z = math.pi*60/180
+max_angle_z = math.pi*37.57/180
 
 
 # Model size
@@ -538,7 +538,7 @@ axes.set_ylabel('y (m)')
 axes.set_zlabel('z (m)')
 #axes.set_xlim(0,1.8)
 #axes.set_ylim(-1,1.5)
-#axes.set_zlim(0,1.6)
+axes.set_zlim(0,1.5)
 
 plt.figure(7, figsize=(8,4))
 plt.plot(t[0:-1],th[0,0:-1],'b',label='T1')
