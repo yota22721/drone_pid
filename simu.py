@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.02            # Sampling time (sec)
-simulation_time = 15.44# Length of time to run simulation (sec)
+simulation_time = 20# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*10/180
 max_angle_y = math.pi*5/180
@@ -245,13 +245,15 @@ class PID:
         self.p_error = 0
         self.p_output = 0
         self.p_deriv = 0
+        self.low_pass_deriv =0
         self.p_y = 0
 
     def update(self, ref, y, dt):
         error = ref - y
         self.integral +=error*dt
         derrivative =(y - self.p_y)/dt
-        output = self.kp * error + self.ki * self.integral - self.kd *derrivative
+        self.low_pass_deriv += (derrivative - self.low_pass_deriv)/8
+        output = self.kp * error + self.ki * self.integral - self.kd *self.low_pass_deriv
         self.p_error = error
         self.p_y = y
         self.p_output = output
