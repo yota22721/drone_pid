@@ -287,6 +287,9 @@ class Controller:
         Ki_ang = [0.08, 0.08, 0.01]  # integral [x,y,z]
         Kd_ang = [2, 2, 4] # derivative [x,y,z]
         self.flag = 0
+        self.ux_t =0
+        self.uy_t =0
+        self.uz_t =0
         self.position = np.array([0, 0, 0.45])
         self.attitude = np.array([0.0, 0.0, 0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
@@ -320,13 +323,14 @@ class Controller:
             #print("k ="+ str(k))
             #pos[0,k] = self.position[0]
             #pos[1,k] = self.position[1]
-            
             if x[11, k] < 0.45 and np.abs(x[9,k]) <0.01 and np.abs(x[10,k]) <0.01:
                 #self.position[1] = x[9,k]
                 #self.position[1] = x[10,k]
-                #self.flag += 1
+                t_ux = x[0,k]
+                t_uy = x[1,k]
+                self.flag = 1
                 self.position[2] = 0
-            
+
             error_x = self.position[0] - x[9,k]
             error_y = self.position[1] - x[10,k]
             error_z = self.position[2] - x[11,k]
@@ -338,10 +342,17 @@ class Controller:
                 
             #error_ud = ud - x[0,k]
             #error_vd = vd - x[1,k]
-            
-            ux = self.outer_pid_x.update(self.position[0],x[9,k], dt)
-            uy = self.outer_pid_y.update(self.position[1],x[10,k],dt)
-            uz = self.inner_pid_z.update(self.position[2],x[11,k],dt)
+            if self.flag == 2:
+                ux = x[0,k]
+                uy = x[1,k]
+                uz =self.uz_t
+            else:
+                ux = self.outer_pid_x.update(self.position[0],x[9,k], dt)
+                uy = self.outer_pid_y.update(self.position[1],x[10,k],dt)
+                uz = self.inner_pid_z.update(self.position[2],x[11,k],dt)
+            if self.flag ==1:
+                self.uz_t = uz
+                self.flag +=1
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             dpsi = self.attitude[2]
             if x[11, k] >= 0.45 and np.abs(x[9,k]) >= 0.01 and np.abs(x[10,k]) >= 0.01:
