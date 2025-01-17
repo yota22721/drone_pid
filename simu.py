@@ -277,8 +277,8 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [3.6, 4.2, 0.05] # proportional [x,y,z]
-        Ki_pos = [0.001, 0.001, 0.00001]  # integral [x,y,z]
+        Kp_pos = [3.5, 4.2, 0.05] # proportional [x,y,z]
+        Ki_pos = [0.001, 0.001, 0.001]  # integral [x,y,z]
         Kd_pos = [11.4, 9, 0.06] # derivative [x,y,z]
 
         # Gains for 
@@ -286,7 +286,8 @@ class Controller:
         Kp_ang= [4, 4, 8] # proportional [x,y,z]
         Ki_ang = [0.08, 0.08, 0.01]  # integral [x,y,z]
         Kd_ang = [2, 2, 4] # derivative [x,y,z]
-        self.position = np.array([0, 0, 0.5])
+        self.flag = 0
+        self.position = np.array([0, 0, 0.45])
         self.attitude = np.array([0.0, 0.0, 0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
         self.outer_pid_y = PID(Kp_pos[1], Ki_pos[1], Kd_pos[1], 0.02)
@@ -320,9 +321,10 @@ class Controller:
             #pos[0,k] = self.position[0]
             #pos[1,k] = self.position[1]
             
-            if x[11, k] < 0.5 and np.abs(x[9,k]) <0.01 and np.abs(x[10,k]) <0.01:
+            if x[11, k] < 0.45 and np.abs(x[9,k]) <0.01 and np.abs(x[10,k]) <0.01:
                 #self.position[1] = x[9,k]
                 #self.position[1] = x[10,k]
+                #self.flag += 1
                 self.position[2] = 0
             
             error_x = self.position[0] - x[9,k]
@@ -336,11 +338,14 @@ class Controller:
                 
             #error_ud = ud - x[0,k]
             #error_vd = vd - x[1,k]
+            
             ux = self.outer_pid_x.update(self.position[0],x[9,k], dt)
             uy = self.outer_pid_y.update(self.position[1],x[10,k],dt)
             uz = self.inner_pid_z.update(self.position[2],x[11,k],dt)
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
-            dpsi = np.arccos((np.abs(self.position[1] - x[10,k]))/np.sqrt(((self.position[0]-x[9,k])**2+ (self.position[1]-x[10,k])**2 + (self.position[2]-x[11,k])**2)))
+            dpsi = self.attitude[2]
+            if x[11, k] >= 0.45 and np.abs(x[9,k]) >= 0.01 and np.abs(x[10,k]) >= 0.01:
+                dpsi = np.arccos((np.abs(self.position[1] - x[10,k]))/np.sqrt(((self.position[0]-x[9,k])**2+ (self.position[1]-x[10,k])**2 + (self.position[2]-x[11,k])**2)))
             #dpsi = Huristic(0.08,0.01,k)
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             #dpsi = np.sin(k)+np.cos(k)
