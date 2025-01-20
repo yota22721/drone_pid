@@ -290,6 +290,9 @@ class Controller:
         self.ux_t =0
         self.uy_t =0
         self.uz_t =0
+        self.roll = 0
+        self.pitch = 0
+        self.yaw = 0
         self.position = np.array([0, 0, 0.45])
         self.attitude = np.array([0.0, 0.0, 0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
@@ -323,11 +326,11 @@ class Controller:
             #print("k ="+ str(k))
             #pos[0,k] = self.position[0]
             #pos[1,k] = self.position[1]
-            if x[11, k] < 0.45 and np.abs(x[9,k]) <0.01 and np.abs(x[10,k]) <0.01:
+            if x[11, k] < 0.45 and np.abs(x[9,k]) <0.01 and np.abs(x[10,k]) <0.01 and self.flag == 0:
                 #self.position[1] = x[9,k]
                 #self.position[1] = x[10,k]
-                t_ux = x[0,k]
-                t_uy = x[1,k]
+                #t_ux = x[0,k]
+                #t_uy = x[1,k]
                 self.flag = 1
                 self.position[2] = 0
 
@@ -343,14 +346,16 @@ class Controller:
             #error_ud = ud - x[0,k]
             #error_vd = vd - x[1,k]
             if self.flag == 2:
-                ux = x[0,k]
-                uy = x[1,k]
+                ux = self.ux_t
+                uy = self.uy_t
                 uz =self.uz_t
             else:
                 ux = self.outer_pid_x.update(self.position[0],x[9,k], dt)
                 uy = self.outer_pid_y.update(self.position[1],x[10,k],dt)
                 uz = self.inner_pid_z.update(self.position[2],x[11,k],dt)
             if self.flag ==1:
+                self.ux_t = ux
+                self.uy_t = uy
                 self.uz_t = uz
                 self.flag +=1
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
@@ -394,11 +399,21 @@ class Controller:
             error_psi = self.attitude[2] - x[8,k]
             #T = m*(ux*(np.sin(x[7,k])*np.cos(x[8,k])*np.cos(x[6,k])+np.sin(x[6,k])*np.sin(x[8,k]))+uy*(np.sin(x[7,k])*np.sin(x[8,k])*np.cos(x[6,k])-np.cos(x[8,k])*np.sin(x[6,k]))+(uz+g)*np.cos(x[7,k])*np.cos(x[6,k]))
             #thrust = np.clip(T,0.0,13)
-            thrust = np.clip((g+uz)*m/(np.cos(x[7,k])*np.cos(x[6,k])),0.0,13)
-            torque_x = self.inner_pid_phi.update(self.attitude[0],x[6,k],dt)*Ixx
-            torque_y = self.inner_pid_psi.update(self.attitude[1],x[7,k],dt)*Iyy
-            torque_z = self.inner_pid_theta.update(self.attitude[2],x[8,k],dt)*Izz
-
+            thrust = np.clip((g+uz)*m/(np.cos(self.attitude[0])*np.cos(self.attitude[1])),0.0,13)
+            if self.flag == 2:
+                torque_x = self.roll
+                torque_y = self.pitch
+                torque_z = self.yaw
+            else:
+                torque_x = self.inner_pid_phi.update(self.attitude[0],x[6,k],dt)*Ixx
+                torque_y = self.inner_pid_psi.update(self.attitude[1],x[7,k],dt)*Iyy
+                torque_z = self.inner_pid_theta.update(self.attitude[2],x[8,k],dt)*Izz
+            
+            if self.flag == 1:
+                self.roll = torque_x
+                self.pitch = torque_y
+                self.yaw = torque_z
+            
             #torque_z = 0
             #x[6,k] +=0.0001*k
             global tu
@@ -582,5 +597,3 @@ plt.title('position',y=-0.25)
 """
 
 plt.show()
-
-    
