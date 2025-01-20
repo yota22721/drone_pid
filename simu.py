@@ -184,9 +184,9 @@ def stateDerivative(x, u):
     #x_dot[0] = (Fz/m) *(cphi * sthe * cpsi + sphi * spsi)-0.25*ub/m
     #x_dot[1] = (Fz/m) *(cphi * sthe * spsi - sphi * cpsi)- 0.25*vb/m
     #x_dot[2] =   -g+ (Fz/m) * (cphi * cthe)-0.25*wb/m 
-    x_dot[0] = -g * sthe + r * vb - q * wb -0.2*ub/m#u_dot
-    x_dot[1] = g * sphi * cthe - r * ub + p * wb - 0.2*vb/m# v_dot
-    x_dot[2] = 1/m * (-Fz) + g * cphi *cthe + q *ub - p * vb -0.2*wb/m # w_dot
+    x_dot[0] = -g * sthe + r * vb - q * wb -0.14*ub/m#u_dot
+    x_dot[1] = g * sphi * cthe - r * ub + p * wb - 0.14*vb/m# v_dot
+    x_dot[2] = 1/m * (-Fz) + g * cphi *cthe + q *ub - p * vb -0.14*wb/m # w_dot
     
     x_dot[3] = 1/Ixx *(L + (Iyy - Izz)  * q * r)#- q*Ir/Ixx #p_dot
     x_dot[4] = 1/Iyy *(M + (Izz - Ixx) * p * r)# + p*Ir/Iyy #q_dot
@@ -293,7 +293,7 @@ class Controller:
         self.roll = 0
         self.pitch = 0
         self.yaw = 0
-        self.position = np.array([0, 0, 0.45])
+        self.position = np.array([0., 0, 0.45])
         self.attitude = np.array([0.0, 0.0, 0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
         self.outer_pid_y = PID(Kp_pos[1], Ki_pos[1], Kd_pos[1], 0.02)
@@ -360,7 +360,7 @@ class Controller:
                 self.flag +=1
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             dpsi = self.attitude[2]
-            if x[11, k] >= 0.45 and np.abs(x[9,k]) >= 0.01 and np.abs(x[10,k]) >= 0.01:
+            if x[11, k] >= 0.45 and np.abs(x[9,k]) >= 0.01 and np.abs(x[10,k]) >= 0.01 and self.flag == 0:
                 dpsi = np.arccos((np.abs(self.position[1] - x[10,k]))/np.sqrt(((self.position[0]-x[9,k])**2+ (self.position[1]-x[10,k])**2 + (self.position[2]-x[11,k])**2)))
             #dpsi = Huristic(0.08,0.01,k)
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
