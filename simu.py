@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.03            # Sampling time (sec)
-simulation_time = 30# Length of time to run simulation (sec)
+simulation_time = 40# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*10/180
 max_angle_y = math.pi*5/180
@@ -286,7 +286,7 @@ class Controller:
         Kp_ang= [0.8, 1.2, 7] # proportional [x,y,z]
         Ki_ang = [0.001, 0.0001, 0.01]  # integral [x,y,z]
         Kd_ang = [1.2, 2.2, 5] # derivative [x,y,z]
-        self.limit = 0.02
+        self.limit = 0.03
         self.flag = 0
         self.ux_t =0
         self.uy_t =0
@@ -294,6 +294,7 @@ class Controller:
         self.roll = 0
         self.pitch = 0
         self.yaw = 0
+        self.t = 0
         self.position = np.array([0, 0, 0.45])
         self.attitude = np.array([0.0, 0.0, 0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
@@ -336,7 +337,7 @@ class Controller:
                 #self.ux_t = self.position[1] - x[10,k]
                 self.flag = 1
                 self.position[2] = 0
-                self.uz_t = (self.position[2] - x[11,k])/6
+                self.uz_t = (self.position[2] - x[11,k])/50
 
             error_x = self.position[0] - x[9,k]
             error_y = self.position[1] - x[10,k]
@@ -357,11 +358,14 @@ class Controller:
                 ux = self.outer_pid_x.update(self.position[0],x[9,k], dt)
                 uy = self.outer_pid_y.update(self.position[1],x[10,k],dt)
                 uz = self.inner_pid_z.update(self.position[2],x[11,k],dt)
+            
             if self.flag ==1:
                 self.ux_t = ux
                 self.uy_t = uy
                 #self.uz_t = uz
                 self.flag +=1
+            
+                
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             dpsi = self.attitude[2]
             if x[11, k] >= 0.45 and np.abs(x[9,k]) >= self.limit and np.abs(x[10,k]) >= self.limit:
@@ -445,11 +449,13 @@ class Controller:
             motor_speed_2 = np.clip(np.power(motor_speeds[1],1/2), 0, np.inf)
             motor_speed_3 = np.clip(np.power(motor_speeds[2],1/2), 0, np.inf)
             motor_speed_4 = np.clip(np.power(motor_speeds[3],1/2), 0, np.inf)
-
-            u[0,k] = motor_speed_1
-            u[1,k] = motor_speed_2
-            u[2,k] = motor_speed_3
-            u[3,k] = motor_speed_4
+            
+            u[0,k] = motor_speed_1 #- 0.2*self.t
+            u[1,k] = motor_speed_2 #- 0.2*self.t
+            u[2,k] = motor_speed_3 #- 0.2*self.t
+            u[3,k] = motor_speed_4 #- 0.2*self.t
+            #if self.flag == 1:
+            #    self.t +=1
             #u[:,k] = np.array(u[:,k]) * (2*np.pi/60)
             #print(u[:,k])
             #print("=========")
@@ -469,7 +475,7 @@ for k in range(0, np.size(t) -1):
     #wu[:,k] = controlInputs(x[:,k], t[k])
     
     # Predict state after one time step
-    print(x[9:,k])
+    #print(x[9:,k])
     u = cont.controller(u,x,k,tstep)
     #if k == 0:
     #    u[:,k] = 117.3
@@ -540,7 +546,7 @@ plt.plot(t[0:-1],u[0,0:-1],'b',label='T1')
 plt.plot(t[0:-1],u[1,0:-1],'g',label='T2')
 plt.plot(t[0:-1],u[2,0:-1],'r',label='T3')
 plt.plot(t[0:-1],u[3,0:-1],'y',label='T4')
-#plt.xlim(0, 1)
+plt.xlim(24, 24.2)
 plt.xlabel('Time (sec)')
 plt.ylabel('Propeller RPM')
 plt.legend(loc='best')
