@@ -29,8 +29,8 @@ n_inputs = 4   # Number of inputs
 R = 0.12
 A = np.pi * R **2
 
-kt = 1.12896e-07# 0.1*1.225*(2*0.12)**4/3600
-bt = 1.354752e-8#0.05*1.225*(2*0.12)**5/3600
+kt = 1.12e-07# 0.1*1.225*(2*0.12)**4/3600
+bt = 1.35e-8#0.05*1.225*(2*0.12)**5/3600
 cq = bt
 
 # Initialize State Conditions
@@ -286,7 +286,7 @@ class Controller:
         Kp_ang= [3, 5, 7] # proportional [x,y,z]
         Ki_ang = [0.001, 0.001, 0.01]  # integral [x,y,z]
         Kd_ang = [5, 5, 5] # derivative [x,y,z]
-        self.limit = 0.02
+        self.limit = 0.045
         self.flag = 0
         self.ux_t =0
         self.uy_t =0
@@ -332,6 +332,9 @@ class Controller:
                 #self.position[1] = x[10,k]
                 #t_ux = x[0,k]
                 #t_uy = x[1,k]
+                #self.ux_t = self.position[0] - x[9,k]
+                #self.ux_t = self.position[1] - x[10,k]
+                #self.uz_t = -(self.position[2] - x[11,k])/10
                 self.flag = 1
                 self.position[2] = 0
 
