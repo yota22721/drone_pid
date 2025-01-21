@@ -277,16 +277,16 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [0.8, 0.5,0.05] # proportional [x,y,z]
-        Ki_pos = [0.0001, 0.0001, 0.001]  # integral [x,y,z]
-        Kd_pos = [3, 3.3, 0.3] # derivative [x,y,z]
+        Kp_pos = [0.8, 0.4,0.0005] # proportional [x,y,z]
+        Ki_pos = [0.0001, 0.001, 0.001]  # integral [x,y,z]
+        Kd_pos = [3, 3.1, 0.3] # derivative [x,y,z]
 
         # Gains for 
         # angle controller
-        Kp_ang= [3, 5, 7] # proportional [x,y,z]
-        Ki_ang = [0.001, 0.001, 0.01]  # integral [x,y,z]
-        Kd_ang = [5, 5, 5] # derivative [x,y,z]
-        self.limit = 0.045
+        Kp_ang= [0.8, 1.2, 7] # proportional [x,y,z]
+        Ki_ang = [0.001, 0.0001, 0.01]  # integral [x,y,z]
+        Kd_ang = [1.2, 2.2, 5] # derivative [x,y,z]
+        self.limit = 0.02
         self.flag = 0
         self.ux_t =0
         self.uy_t =0
@@ -334,9 +334,9 @@ class Controller:
                 #t_uy = x[1,k]
                 #self.ux_t = self.position[0] - x[9,k]
                 #self.ux_t = self.position[1] - x[10,k]
-                #self.uz_t = -(self.position[2] - x[11,k])/10
                 self.flag = 1
                 self.position[2] = 0
+                self.uz_t = (self.position[2] - x[11,k])/6
 
             error_x = self.position[0] - x[9,k]
             error_y = self.position[1] - x[10,k]
@@ -360,7 +360,7 @@ class Controller:
             if self.flag ==1:
                 self.ux_t = ux
                 self.uy_t = uy
-                self.uz_t = uz
+                #self.uz_t = uz
                 self.flag +=1
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             dpsi = self.attitude[2]
