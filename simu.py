@@ -278,8 +278,8 @@ class PID:
 class Controller:
     def __init__(self):
         Kp_pos = [0.8, 0.5,0.05] # proportional [x,y,z]
-        Ki_pos = [0.001, 0.0001, 0.001]  # integral [x,y,z]
-        Kd_pos = [3, 3, 0.3] # derivative [x,y,z]
+        Ki_pos = [0.0001, 0.0001, 0.001]  # integral [x,y,z]
+        Kd_pos = [3, 3.3, 0.3] # derivative [x,y,z]
 
         # Gains for 
         # angle controller
