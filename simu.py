@@ -18,7 +18,7 @@ tstep = 0.03            # Sampling time (sec)
 simulation_time = 30# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*35/180
-max_angle_y = math.pi*10/180
+max_angle_y = math.pi*5/180
 max_angle_z = math.pi*60/180
 
 
@@ -277,16 +277,16 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [0.7, 1., 0.013] # proportional [x,y,z]
-        Ki_pos = [0.0, 0.00, 0.0003]  # integral [x,y,z]
-        Kd_pos = [3.6, 4, 0.2] # derivative [x,y,z]
+        Kp_pos = [0.7, 1., 0.015] # proportional [x,y,z]
+        Ki_pos = [0.0, 0.00, 0.0013]  # integral [x,y,z]
+        Kd_pos = [3.2, 4., 0.2] # derivative [x,y,z]
 
         # Gains for 
         # angle controller
         Kp_ang= [5, 4, 7] # proportional [x,y,z]
         Ki_ang = [0.00, 0.000, 0.01]  # integral [x,y,z]
-        Kd_ang = [3, 3.5, 4] # derivative [x,y,z]
-        self.limit = 0.04
+        Kd_ang = [3, 3.5, 5] # derivative [x,y,z]
+        self.limit = 0.03
         self.flag = 0
         self.ux_t =0
         self.uy_t =0
@@ -336,7 +336,7 @@ class Controller:
                 #self.ux_t = self.position[1] - x[10,k]
                 self.flag = 1
                 self.position[2] = 0
-                self.uz_t = (self.position[2] - x[11,k])/10
+                #self.uz_t = (self.position[2] - x[11,k])/10
 
             error_x = self.position[0] - x[9,k]
             error_y = self.position[1] - x[10,k]
@@ -357,7 +357,7 @@ class Controller:
                 ux = self.outer_pid_x.update(self.position[0],x[9,k], dt)
                 uy = self.outer_pid_y.update(self.position[1],x[10,k],dt)
                 uz = self.inner_pid_z.update(self.position[2],x[11,k],dt)
-            if self.flag ==1:
+            if self.flag ==2:
                 self.ux_t = ux
                 self.uy_t = uy
                 #self.uz_t = uz
@@ -502,7 +502,7 @@ plt.plot(t,x[9,:],'r',label='x')
 plt.plot(t,x[10,:],'b',label='y')
 plt.plot(t,x[11,:],'g',label='z')
 
-#plt.ylim(-1, 10)
+#plt.ylim(-0.05, 0.1)
 #plt.xlim(0, 3)
 plt.legend(loc='best')
 plt.ylabel('Distance(m)')
