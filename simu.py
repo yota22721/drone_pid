@@ -18,7 +18,7 @@ tstep = 0.03            # Sampling time (sec)
 simulation_time = 30# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*35/180
-max_angle_y = math.pi*5/180
+max_angle_y = math.pi*10/180
 max_angle_z = math.pi*60/180
 
 
@@ -277,16 +277,16 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [0.7, 1., 0.015] # proportional [x,y,z]
-        Ki_pos = [0.0, 0.00, 0.0013]  # integral [x,y,z]
-        Kd_pos = [3.2, 4., 0.2] # derivative [x,y,z]
+        Kp_pos = [0.7, 1., 0.045] # proportional [x,y,z]
+        Ki_pos = [0.0, 0.00, 0.0007]  # integral [x,y,z]
+        Kd_pos = [3.2, 3.6, 0.2] # derivative [x,y,z]
 
         # Gains for 
         # angle controller
         Kp_ang= [5, 4, 7] # proportional [x,y,z]
-        Ki_ang = [0.00, 0.000, 0.01]  # integral [x,y,z]
-        Kd_ang = [3, 3.5, 5] # derivative [x,y,z]
-        self.limit = 0.03
+        Ki_ang = [0.001, 0.001, 0.01]  # integral [x,y,z]
+        Kd_ang = [3, 3.5, 4] # derivative [x,y,z]
+        self.limit = 0.09
         self.flag = 0
         self.ux_t =0
         self.uy_t =0
@@ -471,6 +471,8 @@ for k in range(0, np.size(t) -1):
     
     # Predict state after one time step
     print(x[9:,k])
+    #if x[11,k]<=0.45:
+    #    print(k*0.03)
     u = cont.controller(u,x,k,tstep)
     #if k == 0:
     #    u[:,k] = 117.3
@@ -502,7 +504,7 @@ plt.plot(t,x[9,:],'r',label='x')
 plt.plot(t,x[10,:],'b',label='y')
 plt.plot(t,x[11,:],'g',label='z')
 
-#plt.ylim(-0.05, 0.1)
+#plt.ylim(-0.05, 0.05)
 #plt.xlim(0, 3)
 plt.legend(loc='best')
 plt.ylabel('Distance(m)')
