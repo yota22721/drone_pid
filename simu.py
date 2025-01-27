@@ -15,10 +15,10 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.03            # Sampling time (sec)
-simulation_time = 40# Length of time to run simulation (sec)
+simulation_time = 30# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
-max_angle_x = math.pi*10/180
-max_angle_y = math.pi*5/180
+max_angle_x = math.pi*35/180
+max_angle_y = math.pi*10/180
 max_angle_z = math.pi*60/180
 
 
@@ -29,7 +29,7 @@ n_inputs = 4   # Number of inputs
 R = 0.12
 A = np.pi * R **2
 
-kt = 1.12e-07# 0.1*1.225*(2*0.12)**4/3600
+kt = 1.12e-7# 0.1*1.225*(2*0.12)**4/3600
 bt = 1.35e-8#0.05*1.225*(2*0.12)**5/3600
 cq = bt
 
@@ -186,7 +186,7 @@ def stateDerivative(x, u):
     #x_dot[2] =   -g+ (Fz/m) * (cphi * cthe)-0.25*wb/m 
     x_dot[0] = -g * sthe + r * vb - q * wb -0.25*ub/m#u_dot
     x_dot[1] = g * sphi * cthe - r * ub + p * wb - 0.2*vb/m# v_dot
-    x_dot[2] = 1/m * (-Fz) + g * cphi *cthe + q *ub - p * vb -0.25*wb/m # w_dot
+    x_dot[2] = 1/m * (-Fz) + g * cphi *cthe + q *ub - p * vb-0.25*wb/m # w_dot
     
     x_dot[3] = 1/Ixx *(L + (Iyy - Izz)  * q * r)#- q*Ir/Ixx #p_dot
     x_dot[4] = 1/Iyy *(M + (Izz - Ixx) * p * r)# + p*Ir/Iyy #q_dot
@@ -277,16 +277,16 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [0.8, 0.4,0.0005] # proportional [x,y,z]
-        Ki_pos = [0.0001, 0.001, 0.001]  # integral [x,y,z]
-        Kd_pos = [3, 3.1, 0.3] # derivative [x,y,z]
+        Kp_pos = [0.7, 1., 0.013] # proportional [x,y,z]
+        Ki_pos = [0.0, 0.00, 0.0003]  # integral [x,y,z]
+        Kd_pos = [3.6, 4, 0.2] # derivative [x,y,z]
 
         # Gains for 
         # angle controller
-        Kp_ang= [0.8, 1.2, 7] # proportional [x,y,z]
-        Ki_ang = [0.001, 0.0001, 0.01]  # integral [x,y,z]
-        Kd_ang = [1.2, 2.2, 5] # derivative [x,y,z]
-        self.limit = 0.03
+        Kp_ang= [5, 4, 7] # proportional [x,y,z]
+        Ki_ang = [0.00, 0.000, 0.01]  # integral [x,y,z]
+        Kd_ang = [3, 3.5, 4] # derivative [x,y,z]
+        self.limit = 0.04
         self.flag = 0
         self.ux_t =0
         self.uy_t =0
@@ -294,7 +294,6 @@ class Controller:
         self.roll = 0
         self.pitch = 0
         self.yaw = 0
-        self.t = 0
         self.position = np.array([0, 0, 0.45])
         self.attitude = np.array([0.0, 0.0, 0])
         self.outer_pid_x = PID(Kp_pos[0], Ki_pos[0], Kd_pos[0], 0.02)
@@ -337,7 +336,7 @@ class Controller:
                 #self.ux_t = self.position[1] - x[10,k]
                 self.flag = 1
                 self.position[2] = 0
-                self.uz_t = (self.position[2] - x[11,k])/50
+                self.uz_t = (self.position[2] - x[11,k])/10
 
             error_x = self.position[0] - x[9,k]
             error_y = self.position[1] - x[10,k]
@@ -358,14 +357,11 @@ class Controller:
                 ux = self.outer_pid_x.update(self.position[0],x[9,k], dt)
                 uy = self.outer_pid_y.update(self.position[1],x[10,k],dt)
                 uz = self.inner_pid_z.update(self.position[2],x[11,k],dt)
-            
             if self.flag ==1:
                 self.ux_t = ux
                 self.uy_t = uy
                 #self.uz_t = uz
                 self.flag +=1
-            
-                
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             dpsi = self.attitude[2]
             if x[11, k] >= 0.45 and np.abs(x[9,k]) >= self.limit and np.abs(x[10,k]) >= self.limit:
@@ -398,7 +394,7 @@ class Controller:
             
             if mag_angle_des > max_angle_z:
                 self.attitude[2] = (self.attitude[2] / mag_angle_des) * max_angle_z
-
+            
             #else:
             #    self.attitude[0] = 0
             #    self.attitude[1] = 0
@@ -408,7 +404,7 @@ class Controller:
             error_psi = self.attitude[2] - x[8,k]
             #T = m*(ux*(np.sin(x[7,k])*np.cos(x[8,k])*np.cos(x[6,k])+np.sin(x[6,k])*np.sin(x[8,k]))+uy*(np.sin(x[7,k])*np.sin(x[8,k])*np.cos(x[6,k])-np.cos(x[8,k])*np.sin(x[6,k]))+(uz+g)*np.cos(x[7,k])*np.cos(x[6,k]))
             #thrust = np.clip(T,0.0,13)
-            thrust = np.clip((g+uz)*m/(np.cos(self.attitude[0])*np.cos(self.attitude[1])),0.0,18)
+            thrust = np.clip((g+uz)*m/(np.cos(self.attitude[0])*np.cos(self.attitude[1])),0.0,17.5)
             if self.flag == 2:
                 torque_x = self.roll
                 torque_y = self.pitch
@@ -449,13 +445,11 @@ class Controller:
             motor_speed_2 = np.clip(np.power(motor_speeds[1],1/2), 0, np.inf)
             motor_speed_3 = np.clip(np.power(motor_speeds[2],1/2), 0, np.inf)
             motor_speed_4 = np.clip(np.power(motor_speeds[3],1/2), 0, np.inf)
-            
-            u[0,k] = motor_speed_1 #- 0.2*self.t
-            u[1,k] = motor_speed_2 #- 0.2*self.t
-            u[2,k] = motor_speed_3 #- 0.2*self.t
-            u[3,k] = motor_speed_4 #- 0.2*self.t
-            #if self.flag == 1:
-            #    self.t +=1
+
+            u[0,k] = motor_speed_1
+            u[1,k] = motor_speed_2
+            u[2,k] = motor_speed_3
+            u[3,k] = motor_speed_4
             #u[:,k] = np.array(u[:,k]) * (2*np.pi/60)
             #print(u[:,k])
             #print("=========")
@@ -469,18 +463,23 @@ class Controller:
 # March through time array and numerically solve for vehicle states
 #vertvel = np.array([0,0,1] + 9*[0])
 cont = Controller()
+max_t  =[1.0,1.3,1.5]
 for k in range(0, np.size(t) -1): 
         
     # Determine control inputs based on current state
     #wu[:,k] = controlInputs(x[:,k], t[k])
     
     # Predict state after one time step
-    #print(x[9:,k])
+    print(x[9:,k])
     u = cont.controller(u,x,k,tstep)
     #if k == 0:
     #    u[:,k] = 117.3
     #print(u[:,k])
     x[:,k+1] = RK4(x[:,k], u[:,k], tstep)
+    #x[7,k+1] = np.clip(x[7,k+1]*RTD,-3,3)/RTD
+    for i in range(3):
+        if max_t[i] > x[9+i,k+1]:
+            max_t[i] = x[9+i,k+1]
     #pos[:2,k+1] = pos[:2,k]+x[:2,k+1]*0.02
     #pos[2,k+1] = pos[2,k]-x[2,k+1]*0.02
 
@@ -493,6 +492,7 @@ for k in range(0, np.size(t) -1):
     #print(tau[:,k])
     #if x[11,k+1] < 0.0:
     #    break
+print(max_t)
     
     
 
@@ -505,26 +505,27 @@ plt.plot(t,x[11,:],'g',label='z')
 #plt.ylim(-1, 10)
 #plt.xlim(0, 3)
 plt.legend(loc='best')
-plt.ylabel('z (m)')
+plt.ylabel('Distance(m)')
 #plt.xlabel('Time (sec)')
 #plt.legend(loc='best')
-plt.title('Time History of Height, X Position, and Pitch')
+#plt.title('Time History of Height, X Position, and Pitch')
 
 plt.subplot(312)
-plt.plot(t,tu[1,:],'r',label='torque_x')
-plt.plot(t,tu[2,:],'b',label='torque_y')
+#plt.plot(t,tu[1,:],'r',label='torque_x')
+#plt.plot(t,tu[2,:],'b',label='torque_y')
 #plt.plot(t,tu[3,:],'g',label='torque_z')
+plt.plot(t,x[8,:]*RTD,'g',label='psi')
 #plt.plot(t,x[9,:],'r',label='x')
 #plt.xlim(0, 1)
 plt.legend(loc='best')
 #plt.ylabel('tau (deg)')
-plt.ylabel('tau (m)')
+plt.ylabel('psi (dgree)')
 #plt.xlabel('Time (sec)')
 
 plt.subplot(313)
 plt.plot(t,x[6,:]*RTD,'r',label='phi')
 plt.plot(t,x[7,:]*RTD,'b',label='theta')
-plt.plot(t,x[8,:]*RTD,'g',label='psi')
+
 #plt.xlim(0, 3)
 plt.legend(loc='best')
 plt.ylabel('(deg)')
@@ -546,7 +547,7 @@ plt.plot(t[0:-1],u[0,0:-1],'b',label='T1')
 plt.plot(t[0:-1],u[1,0:-1],'g',label='T2')
 plt.plot(t[0:-1],u[2,0:-1],'r',label='T3')
 plt.plot(t[0:-1],u[3,0:-1],'y',label='T4')
-plt.xlim(24, 24.2)
+#plt.xlim(0, 1)
 plt.xlabel('Time (sec)')
 plt.ylabel('Propeller RPM')
 plt.legend(loc='best')
