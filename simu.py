@@ -15,10 +15,10 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.03            # Sampling time (sec)
-simulation_time = 30# Length of time to run simulation (sec)
+simulation_time = 20# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*35/180
-max_angle_y = math.pi*10/180
+max_angle_y = math.pi*5/180
 max_angle_z = math.pi*60/180
 
 
@@ -277,16 +277,16 @@ class PID:
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [0.7, 1., 0.045] # proportional [x,y,z]
-        Ki_pos = [0.0, 0.00, 0.0007]  # integral [x,y,z]
-        Kd_pos = [3.2, 3.6, 0.2] # derivative [x,y,z]
+        Kp_pos = [0.7, 1., 0.015] # proportional [x,y,z]
+        Ki_pos = [0.0, 0.00, 0.0013]  # integral [x,y,z]
+        Kd_pos = [3.2, 4., 0.2] # derivative [x,y,z]
 
         # Gains for 
         # angle controller
         Kp_ang= [5, 4, 7] # proportional [x,y,z]
-        Ki_ang = [0.001, 0.001, 0.01]  # integral [x,y,z]
-        Kd_ang = [3, 3.5, 4] # derivative [x,y,z]
-        self.limit = 0.09
+        Ki_ang = [0.00, 0.000, 0.01]  # integral [x,y,z]
+        Kd_ang = [3, 3.5, 5] # derivative [x,y,z]
+        self.limit = 0.05
         self.flag = 0
         self.ux_t =0
         self.uy_t =0
@@ -327,7 +327,7 @@ class Controller:
             #print("k ="+ str(k))
             #pos[0,k] = self.position[0]
             #pos[1,k] = self.position[1]
-            if x[11, k] < 0.45 and np.abs(x[9,k]) <self.limit and np.abs(x[10,k]) <self.limit and self.flag == 0:
+            if x[11, k] < 0.5 and np.abs(x[9,k]) <self.limit and np.abs(x[10,k]) <self.limit and self.flag == 0:
                 #self.position[1] = x[9,k]
                 #self.position[1] = x[10,k]
                 #t_ux = x[0,k]
@@ -362,9 +362,11 @@ class Controller:
                 self.uy_t = uy
                 #self.uz_t = uz
                 self.flag +=1
+            if self.flag == 1:
+                uz -=0.03
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             dpsi = self.attitude[2]
-            if x[11, k] >= 0.45 and np.abs(x[9,k]) >= self.limit and np.abs(x[10,k]) >= self.limit:
+            if x[11, k] >= 0.5 and np.abs(x[9,k]) >= self.limit and np.abs(x[10,k]) >= self.limit:
                 dpsi = np.arccos((np.abs(self.position[1] - x[10,k]))/np.sqrt(((self.position[0]-x[9,k])**2+ (self.position[1]-x[10,k])**2 + (self.position[2]-x[11,k])**2)))
             #dpsi = Huristic(0.08,0.01,k)
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
@@ -424,6 +426,7 @@ class Controller:
             global tu
             tu[:,k] = [thrust,torque_x, torque_y, torque_z]
             
+            
             l = dx
             
             motor_torque_1 = np.clip(0.25*thrust/kt - 0.25*torque_x /(l*kt) + 0.25*torque_y/
@@ -471,7 +474,7 @@ for k in range(0, np.size(t) -1):
     
     # Predict state after one time step
     print(x[9:,k])
-    #if x[11,k]<=0.45:
+    #if x[11,k] <=0.45:
     #    print(k*0.03)
     u = cont.controller(u,x,k,tstep)
     #if k == 0:
@@ -479,9 +482,11 @@ for k in range(0, np.size(t) -1):
     #print(u[:,k])
     x[:,k+1] = RK4(x[:,k], u[:,k], tstep)
     #x[7,k+1] = np.clip(x[7,k+1]*RTD,-3,3)/RTD
+    
     for i in range(3):
         if max_t[i] > x[9+i,k+1]:
             max_t[i] = x[9+i,k+1]
+    
     #pos[:2,k+1] = pos[:2,k]+x[:2,k+1]*0.02
     #pos[2,k+1] = pos[2,k]-x[2,k+1]*0.02
 
@@ -494,7 +499,7 @@ for k in range(0, np.size(t) -1):
     #print(tau[:,k])
     #if x[11,k+1] < 0.0:
     #    break
-print(max_t)
+#print(max_t)
     
     
 
@@ -504,7 +509,7 @@ plt.plot(t,x[9,:],'r',label='x')
 plt.plot(t,x[10,:],'b',label='y')
 plt.plot(t,x[11,:],'g',label='z')
 
-#plt.ylim(-0.05, 0.05)
+#plt.ylim(-0.05, 0.1)
 #plt.xlim(0, 3)
 plt.legend(loc='best')
 plt.ylabel('Distance(m)')
