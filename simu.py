@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.03            # Sampling time (sec)
-simulation_time = 25# Length of time to run simulation (sec)
+simulation_time = 19.75# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*35/180
 max_angle_y = math.pi*5/180
@@ -327,7 +327,7 @@ class Controller:
             #print("k ="+ str(k))
             #pos[0,k] = self.position[0]
             #pos[1,k] = self.position[1]
-            if x[11, k] < 0.5 and np.abs(x[9,k]) <self.limit and np.abs(x[10,k]) <self.limit and self.flag == 0:
+            if x[11, k] < 0.45 and np.abs(x[9,k]) <self.limit and np.abs(x[10,k]) <self.limit and self.flag == 0:
                 #self.position[1] = x[9,k]
                 #self.position[1] = x[10,k]
                 #t_ux = x[0,k]
@@ -366,7 +366,7 @@ class Controller:
                 uz -=0.01
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             dpsi = self.attitude[2]
-            if x[11, k] >= 0.5 and np.abs(x[9,k]) >= self.limit and np.abs(x[10,k]) >= self.limit:
+            if x[11, k] >= 0.45 and np.abs(x[9,k]) >= self.limit and np.abs(x[10,k]) >= self.limit:
                 dpsi = np.arccos((np.abs(self.position[1] - x[10,k]))/np.sqrt(((self.position[0]-x[9,k])**2+ (self.position[1]-x[10,k])**2 + (self.position[2]-x[11,k])**2)))
             #dpsi = Huristic(0.08,0.01,k)
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
@@ -588,8 +588,8 @@ axes.set_xlabel('x (m)')
 axes.set_ylabel('y (m)')
 axes.set_zlabel('z (m)')
 #axes.set_xlim(0,1.8)
-#axes.set_ylim(-1,1.5)
-#axes.set_zlim(0,1.6)
+#axes.set_ylim(-0.1,1.35)
+#axes.set_zlim(0,1.55)
 
 plt.figure(7, figsize=(8,4))
 plt.plot(t[0:-1],th[0,0:-1],'b',label='T1')
