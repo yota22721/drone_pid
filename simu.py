@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.03            # Sampling time (sec)
-simulation_time = 15.26# Length of time to run simulation (sec)
+simulation_time = 25# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*35/180
 max_angle_y = math.pi*5/180
@@ -283,7 +283,7 @@ class Controller:
 
         # Gains for 
         # angle controller
-        Kp_ang= [5, 4, 7] # proportional [x,y,z]
+        Kp_ang= [5, 4, 6] # proportional [x,y,z]
         Ki_ang = [0.00, 0.000, 0.01]  # integral [x,y,z]
         Kd_ang = [3, 3.5, 5] # derivative [x,y,z]
         self.limit = 0.05
@@ -363,7 +363,7 @@ class Controller:
                 #self.uz_t = uz
                 self.flag +=1
             if self.flag == 1:
-                uz -=0.03
+                uz -=0.01
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             dpsi = self.attitude[2]
             if x[11, k] >= 0.5 and np.abs(x[9,k]) >= self.limit and np.abs(x[10,k]) >= self.limit:
@@ -505,39 +505,38 @@ for k in range(0, np.size(t) -1):
 
 plt.figure(1, figsize=(8,8))
 plt.subplot(311)
-plt.plot(t,x[9,:],'r',label='x')
-plt.plot(t,x[10,:],'b',label='y')
-plt.plot(t,x[11,:],'g',label='z')
+plt.plot(t,x[9,:],'r',label='X')
+plt.plot(t,x[10,:],'b',label='Y')
+plt.plot(t,x[11,:],'g',label='Z')
 
 #plt.ylim(-0.05, 0.1)
 #plt.xlim(0, 3)
 plt.legend(loc='best')
-plt.ylabel('Distance(m)')
-#plt.xlabel('Time (sec)')
+plt.ylabel('Position (m)')
+plt.xlabel('Time (s)')
 #plt.legend(loc='best')
-#plt.title('Time History of Height, X Position, and Pitch')
+#plt.text(0.5, -0.38, '(a)', ha='center', va='center', transform=plt.gca().transAxes)  # 下にタイトル
 
 plt.subplot(312)
 #plt.plot(t,tu[1,:],'r',label='torque_x')
 #plt.plot(t,tu[2,:],'b',label='torque_y')
-#plt.plot(t,tu[3,:],'g',label='torque_z')
-plt.plot(t,x[8,:]*RTD,'g',label='psi')
+plt.plot(t,x[8,:]*RTD,'g',label='Psi')
 #plt.plot(t,x[9,:],'r',label='x')
 #plt.xlim(0, 1)
 plt.legend(loc='best')
 #plt.ylabel('tau (deg)')
-plt.ylabel('psi (dgree)')
-#plt.xlabel('Time (sec)')
+plt.ylabel('Euler Angle (degrees)')
+plt.xlabel('Time (s)')
 
 plt.subplot(313)
-plt.plot(t,x[6,:]*RTD,'r',label='phi')
-plt.plot(t,x[7,:]*RTD,'b',label='theta')
+plt.plot(t,x[6,:]*RTD,'r',label='Phi')
+plt.plot(t,x[7,:]*RTD,'b',label='Theta')
 
 #plt.xlim(0, 3)
 plt.legend(loc='best')
-plt.ylabel('(deg)')
-plt.xlabel('Time (sec)')
-
+plt.ylabel('Euler Angles (degrees)')
+plt.xlabel('Time (s)')
+plt.subplots_adjust(hspace=0.5)
 """
 plt.figure(2, figsize=(8,8))
 ax = plt.subplot(1,1,1)
