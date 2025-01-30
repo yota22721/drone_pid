@@ -154,8 +154,10 @@ def stateDerivative(x, u):
     F4 = kt*u[3]**2
     #print([F1,F2,F3,F4])
     Fz = F1 + F2 + F3 + F4
-    L = (F2 + F3) * dy - (F1 + F4) *dy#tau phi
-    M = (F1 + F2) * dx - (F3 + F4) *dx#tau theta 
+    #L = (F2 + F3) * dy - (F1 + F4) *dy#tau phi
+    L = (-F2 + F4) *dy#tau phi
+    #M = (F1 + F2) * dx - (F3 + F4) *dx#tau theta 
+    M = (-F1 + F3) *dx#tau theta 
     #L = (F1) * dy - (F4) *dy#tau phi
     #M = (F3) * dx - (F1) * dx#tau theta 
     #Tってなんの関数?推進力->プロペラの推力とその半径によって回転方向にトルクを与えるものを関数Tとして->ヨーモーメントを表見してるらしい
@@ -428,7 +430,7 @@ class Controller:
             
             
             l = dx
-            
+            """
             motor_torque_1 = np.clip(0.25*thrust/kt - 0.25*torque_x /(l*kt) + 0.25*torque_y/
                                     (l*kt) - 0.25 *torque_z/bt, 0, np.inf)
             motor_torque_2 = np.clip(0.25*thrust/kt + 0.25*torque_x /(l*kt) + 0.25*torque_y/
@@ -437,6 +439,11 @@ class Controller:
                                     (l*kt) - 0.25 *torque_z/bt,0, np.inf)
             motor_torque_4 = np.clip(0.25*thrust/kt - 0.25*torque_x /(l*kt) - 0.25*torque_y/
                                     (l*kt) + 0.25 *torque_z/bt,0, np.inf)
+            """
+            motor_torque_1 = np.clip(0.25*thrust/kt - 0.5*torque_y /(l*kt) - 0.25 *torque_z/bt, 0, np.inf)
+            motor_torque_2 = np.clip(0.25*thrust/kt - 0.5*torque_x /(l*kt) + 0.25 *torque_z/bt,0, np.inf)
+            motor_torque_3 = np.clip(0.25*thrust/kt + 0.5*torque_y /(l*kt) - 0.25 *torque_z/bt,0, np.inf)
+            motor_torque_4 = np.clip(0.25*thrust/kt + 0.5*torque_x /(l*kt) + 0.25 *torque_z/bt,0, np.inf)
             motor_speeds = [motor_torque_1, motor_torque_2, motor_torque_3, motor_torque_4]
 
             for i in range(4):
@@ -561,15 +568,16 @@ plt.title('Time History of Control Inputs')
 
 
 plt.figure(4, figsize=(8,8))
+plt.subplot(311)
 plt.plot(t,speeds[0,:],'r',label='u')
 plt.plot(t,speeds[1,:],'b',label='v')
 plt.plot(t,speeds[2,:],'g',label='w')
 #plt.xlim(0, 10)
 #plt.ylim(-10, 2)
-plt.xlabel('Time (sec)')
-plt.ylabel('[m/s]')
+plt.xlabel('Time (s)')
+plt.ylabel('Speeds [m/s]')
 plt.legend(loc='best')
-plt.title('speeds',y=-0.25)
+#plt.title('speeds',y=-0.25)
 
 plt.figure(5, figsize=(8,8))
 plt.plot(t,tu[0,:],'r',label='thrust')
