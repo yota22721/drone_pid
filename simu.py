@@ -29,7 +29,7 @@ n_inputs = 4   # Number of inputs
 R = 0.12
 A = np.pi * R **2
 
-kt = 1.12e-7# 0.1*1.225*(2*0.12)**4/3600
+kt = 1.12e-7# 0.1*1.225*(2*0.12)**4/3600 
 bt = 1.35e-8#0.05*1.225*(2*0.12)**5/3600
 cq = bt
 
@@ -154,10 +154,10 @@ def stateDerivative(x, u):
     F4 = kt*u[3]**2
     #print([F1,F2,F3,F4])
     Fz = F1 + F2 + F3 + F4
-    #L = (F2 + F3) * dy - (F1 + F4) *dy#tau phi
-    L = (-F2 + F4) *dy#tau phi
-    #M = (F1 + F2) * dx - (F3 + F4) *dx#tau theta 
-    M = (-F1 + F3) *dx#tau theta 
+    L = (F2 + F3) * dy - (F1 + F4) *dy#tau phi
+    #L = (-F2 + F4) *dy#tau phi
+    M = (F1 + F2) * dx - (F3 + F4) *dx#tau theta 
+    #M = (-F1 + F3) *dx#tau theta 
     #L = (F1) * dy - (F4) *dy#tau phi
     #M = (F3) * dx - (F1) * dx#tau theta 
     #Tってなんの関数?推進力->プロペラの推力とその半径によって回転方向にトルクを与えるものを関数Tとして->ヨーモーメントを表見してるらしい
@@ -186,7 +186,7 @@ def stateDerivative(x, u):
     #x_dot[0] = (Fz/m) *(cphi * sthe * cpsi + sphi * spsi)-0.25*ub/m
     #x_dot[1] = (Fz/m) *(cphi * sthe * spsi - sphi * cpsi)- 0.25*vb/m
     #x_dot[2] =   -g+ (Fz/m) * (cphi * cthe)-0.25*wb/m 
-    x_dot[0] = -g * sthe + r * vb - q * wb -0.25*ub/m#u_dot
+    x_dot[0] = -g * sthe + r * vb - q * wb -0.2*ub/m#u_dot
     x_dot[1] = g * sphi * cthe - r * ub + p * wb - 0.2*vb/m# v_dot
     x_dot[2] = 1/m * (-Fz) + g * cphi *cthe + q *ub - p * vb-0.25*wb/m # w_dot
     
@@ -253,8 +253,8 @@ class PID:
     def update(self, ref, y, dt):
         error = ref - y
         self.integral +=error*dt
-        derrivative =(y - self.p_y)/dt
-        self.low_pass_deriv += (derrivative - self.low_pass_deriv)/8
+        deriv =(y - self.p_y)/dt
+        self.low_pass_deriv += (deriv - self.low_pass_deriv)/8
         output = self.kp * error + self.ki * self.integral - self.kd *self.low_pass_deriv
         self.p_error = error
         self.p_y = y
@@ -430,7 +430,7 @@ class Controller:
             
             
             l = dx
-            """
+            
             motor_torque_1 = np.clip(0.25*thrust/kt - 0.25*torque_x /(l*kt) + 0.25*torque_y/
                                     (l*kt) - 0.25 *torque_z/bt, 0, np.inf)
             motor_torque_2 = np.clip(0.25*thrust/kt + 0.25*torque_x /(l*kt) + 0.25*torque_y/
@@ -444,6 +444,7 @@ class Controller:
             motor_torque_2 = np.clip(0.25*thrust/kt - 0.5*torque_x /(l*kt) + 0.25 *torque_z/bt,0, np.inf)
             motor_torque_3 = np.clip(0.25*thrust/kt + 0.5*torque_y /(l*kt) - 0.25 *torque_z/bt,0, np.inf)
             motor_torque_4 = np.clip(0.25*thrust/kt + 0.5*torque_x /(l*kt) + 0.25 *torque_z/bt,0, np.inf)
+            """
             motor_speeds = [motor_torque_1, motor_torque_2, motor_torque_3, motor_torque_4]
 
             for i in range(4):
@@ -525,11 +526,12 @@ plt.xlabel('Time (s)')
 #plt.text(0.5, -0.38, '(a)', ha='center', va='center', transform=plt.gca().transAxes)  # 下にタイトル
 
 plt.subplot(312)
-#plt.plot(t,tu[1,:],'r',label='torque_x')
-#plt.plot(t,tu[2,:],'b',label='torque_y')
+#plt.plot(t,tu[0,:],'r',label='torque_x')
+#plt.plot(t,tu[1,:],'b',label='torque_y')
+#plt.plot(t,tu[2,:],'g',label='torque_z')
 plt.plot(t,x[8,:]*RTD,'g',label='Psi')
 #plt.plot(t,x[9,:],'r',label='x')
-#plt.xlim(0, 1)
+#plt.ylim(35, 40)
 plt.legend(loc='best')
 #plt.ylabel('tau (deg)')
 plt.ylabel('Euler Angle (degrees)')
@@ -572,6 +574,15 @@ plt.subplot(311)
 plt.plot(t,speeds[0,:],'r',label='u')
 plt.plot(t,speeds[1,:],'b',label='v')
 plt.plot(t,speeds[2,:],'g',label='w')
+#plt.xlim(0, 10)
+#plt.ylim(-10, 2)
+plt.xlabel('Time (s)')
+plt.ylabel('Speeds [m/s]')
+plt.legend(loc='best')
+plt.subplot(312)
+plt.plot(t,x[0,:],'r',label='u')
+plt.plot(t,x[1,:],'b',label='v')
+plt.plot(t,x[2,:],'g',label='w')
 #plt.xlim(0, 10)
 #plt.ylim(-10, 2)
 plt.xlabel('Time (s)')
