@@ -15,7 +15,7 @@ DTR = 1/57.3; RTD = 57.3
 
 # Simulation time and model parameters
 tstep = 0.03            # Sampling time (sec)
-simulation_time = 30# Length of time to run simulation (sec)
+simulation_time = 12.78# Length of time to run simulation (sec)
 t = np.arange(0,simulation_time,tstep)   # time array
 max_angle_x = math.pi*35/180
 max_angle_y = math.pi*5/180
@@ -29,7 +29,7 @@ n_inputs = 4   # Number of inputs
 R = 0.12
 A = np.pi * R **2
 
-kt = 1.12e-7# 0.1*1.225*(2*0.12)**4/3600 
+kt = 1.12e-7# 0.1*1.225*(2*0.12)**4/3600
 bt = 1.35e-8#0.05*1.225*(2*0.12)**5/3600
 cq = bt
 
@@ -40,14 +40,13 @@ tu = np.zeros((4,np.size(t)))
 th = np.zeros((4,np.size(t)))
 pos = np.zeros((3,np.size(t)))
 speeds = np.zeros((3,np.size(t)))
-acc = np.zeros((3,np.size(t)))
 # Initial height
 #x[6,0] = -max_angle_x
 #x[7,0] = max_angle_y
 #x[8,0] = 0
 
 x[9,0] = 1.0
-x[10,0] =1.3
+x[10,0] =1.0
 x[11,0] = 1.5
 
 pos[0,0] = 1.0
@@ -156,9 +155,7 @@ def stateDerivative(x, u):
     #print([F1,F2,F3,F4])
     Fz = F1 + F2 + F3 + F4
     L = (F2 + F3) * dy - (F1 + F4) *dy#tau phi
-    #L = (-F2 + F4) *dy#tau phi
     M = (F1 + F2) * dx - (F3 + F4) *dx#tau theta 
-    #M = (-F1 + F3) *dx#tau theta 
     #L = (F1) * dy - (F4) *dy#tau phi
     #M = (F3) * dx - (F1) * dx#tau theta 
     #Tってなんの関数?推進力->プロペラの推力とその半径によって回転方向にトルクを与えるものを関数Tとして->ヨーモーメントを表見してるらしい
@@ -187,8 +184,8 @@ def stateDerivative(x, u):
     #x_dot[0] = (Fz/m) *(cphi * sthe * cpsi + sphi * spsi)-0.25*ub/m
     #x_dot[1] = (Fz/m) *(cphi * sthe * spsi - sphi * cpsi)- 0.25*vb/m
     #x_dot[2] =   -g+ (Fz/m) * (cphi * cthe)-0.25*wb/m 
-    x_dot[0] = -g * sthe + r * vb - q * wb -0.15*ub/m#u_dot
-    x_dot[1] = g * sphi * cthe - r * ub + p * wb - 0.15*vb/m# v_dot
+    x_dot[0] = -g * sthe + r * vb - q * wb -0.25*ub/m#u_dot
+    x_dot[1] = g * sphi * cthe - r * ub + p * wb - 0.2*vb/m# v_dot
     x_dot[2] = 1/m * (-Fz) + g * cphi *cthe + q *ub - p * vb-0.25*wb/m # w_dot
     
     x_dot[3] = 1/Ixx *(L + (Iyy - Izz)  * q * r)#- q*Ir/Ixx #p_dot
@@ -249,14 +246,13 @@ class PID:
         self.p_output = 0
         self.p_deriv = 0
         self.low_pass_deriv =0
-        self.acc_deriv =0
         self.p_y = 0
 
     def update(self, ref, y, dt):
         error = ref - y
         self.integral +=error*dt
-        deriv =(y - self.p_y)/dt
-        self.low_pass_deriv += (deriv - self.low_pass_deriv)/8
+        derrivative =(y - self.p_y)/dt
+        self.low_pass_deriv += (derrivative - self.low_pass_deriv)/8
         output = self.kp * error + self.ki * self.integral - self.kd *self.low_pass_deriv
         self.p_error = error
         self.p_y = y
@@ -271,31 +267,16 @@ class PID:
         """
         return self.p_output
     
-    def pid(self, ref,y, dt):
-        error = ref - y
-        self.integral +=error*dt
-        deriv =(y - self.p_y)/dt
-        acc = (deriv - self.p_deriv)/dt
-        #self.low_pass_deriv += (deriv - self.low_pass_deriv)/8
-        self.acc_deriv += (acc - self.acc_deriv)/8
-        output = self.kp * error + self.ki * self.integral - self.kd *self.acc_deriv
+    def pd(self, error, dt):
+        deriv = (error - self.p_error)/dt
+        prop = (deriv - self.p_deriv)/dt
+        du =  self.kp * error +self.ki*prop + self.kd * deriv 
         self.p_error = error
-        self.p_y = y
         self.p_deriv = deriv
-        self.p_output = output
+        self.p_output = du
         return self.p_output
 class Controller:
     def __init__(self):
-        Kp_pos = [0, 0, 0.1] # proportional [x,y,z]
-        Ki_pos = [0.0, 0.00, 0.00]  # integral [x,y,z]
-        Kd_pos = [0, 0., 1] # derivative [x,y,z]
-
-        # Gains for 
-        # angle controller
-        Kp_ang= [0, 0, 6] # proportional [x,y,z]
-        Ki_ang = [0.00, 0.000, 0.01]  # integral [x,y,z]
-        Kd_ang = [0, 0, 5] # derivative [x,y,z]
-        """
         Kp_pos = [0.7, 1., 0.015] # proportional [x,y,z]
         Ki_pos = [0.0, 0.00, 0.0013]  # integral [x,y,z]
         Kd_pos = [3.2, 4., 0.2] # derivative [x,y,z]
@@ -305,7 +286,6 @@ class Controller:
         Kp_ang= [5, 4, 6] # proportional [x,y,z]
         Ki_ang = [0.00, 0.000, 0.01]  # integral [x,y,z]
         Kd_ang = [3, 3.5, 5] # derivative [x,y,z]
-        """
         self.limit = 0.05
         self.flag = 0
         self.ux_t =0
@@ -341,10 +321,6 @@ class Controller:
             speeds[1,k] = cthe * spsi * ub +(cphi *cpsi + sphi * sthe *spsi) * vb + \
                             (-sphi*cpsi + cphi*sthe*spsi) *wb #yE_dot
             speeds[2,k] =  -1 * (-sthe * ub + sphi*cthe * vb + cphi*cthe *wb) #hE_dot
-            if k != 0:
-                acc[0,k] = (speeds[0,k]-speeds[0,k-1])/0.02
-                acc[1,k] = (speeds[1,k]-speeds[1,k-1])/0.02
-                acc[2,k] = (speeds[2,k]-speeds[2,k-1])/0.02
             #self.position[0] = np.clip(-x[9,0]*(k+1)/300 +x[9,0],0,np.inf)
             #self.position[1] = np.clip(-x[10,0]*(k+1)/300 +x[10,0],0,np.inf)
             #print(self.position)
@@ -358,8 +334,8 @@ class Controller:
                 #t_uy = x[1,k]
                 #self.ux_t = self.position[0] - x[9,k]
                 #self.ux_t = self.position[1] - x[10,k]
-                self.flag = 0
-                #self.position[2] = 0
+                self.flag = 1
+                self.position[2] = 0
                 #self.uz_t = (self.position[2] - x[11,k])/10
 
             error_x = self.position[0] - x[9,k]
@@ -378,16 +354,16 @@ class Controller:
                 uy = self.uy_t
                 uz =self.uz_t
             else:
-                ux = self.outer_pid_x.pid(self.position[0],x[9,k], dt)
-                uy = self.outer_pid_y.pid(self.position[1],x[10,k],dt)
-                uz = self.inner_pid_z.pid(self.position[2],x[11,k],dt)
+                ux = self.outer_pid_x.update(self.position[0],x[9,k], dt)
+                uy = self.outer_pid_y.update(self.position[1],x[10,k],dt)
+                uz = self.inner_pid_z.update(self.position[2],x[11,k],dt)
             if self.flag ==2:
                 self.ux_t = ux
                 self.uy_t = uy
                 #self.uz_t = uz
                 self.flag +=1
             if self.flag == 1:
-                uz -=0.01
+                uz -=0.2
             #dpsi = np.arccos(np.sqrt((self.position[0]-x[9,k])**2+(self.position[1]-x[10,k])**2)/np.sqrt(ux**2+uy**2))
             dpsi = self.attitude[2]
             if x[11, k] >= 0.45 and np.abs(x[9,k]) >= self.limit and np.abs(x[10,k]) >= self.limit:
@@ -428,8 +404,8 @@ class Controller:
             error_phi = self.attitude[0] - x[6,k]
             error_theta = self.attitude[1] - x[7,k]
             error_psi = self.attitude[2] - x[8,k]
-            #T = m*(ux*(np.sin(self.attitude[1])*np.cos(self.attitude[2])*np.cos(self.attitude[0])+np.sin(self.attitude[0])*np.sin(self.attitude[2]))+uy*(np.sin(self.attitude[1])*np.sin(self.attitude[2])*np.cos(self.attitude[0])-np.cos(self.attitude[2])*np.sin(self.attitude[0]))+(uz+g)*np.cos(self.attitude[1])*np.cos(self.attitude[0]))
-            #thrust = np.clip(T,0.0,17.5)
+            #T = m*(ux*(np.sin(x[7,k])*np.cos(x[8,k])*np.cos(x[6,k])+np.sin(x[6,k])*np.sin(x[8,k]))+uy*(np.sin(x[7,k])*np.sin(x[8,k])*np.cos(x[6,k])-np.cos(x[8,k])*np.sin(x[6,k]))+(uz+g)*np.cos(x[7,k])*np.cos(x[6,k]))
+            #thrust = np.clip(T,0.0,13)
             thrust = np.clip((g+uz)*m/(np.cos(self.attitude[0])*np.cos(self.attitude[1])),0.0,17.5)
             if self.flag == 2:
                 torque_x = self.roll
@@ -461,12 +437,6 @@ class Controller:
                                     (l*kt) - 0.25 *torque_z/bt,0, np.inf)
             motor_torque_4 = np.clip(0.25*thrust/kt - 0.25*torque_x /(l*kt) - 0.25*torque_y/
                                     (l*kt) + 0.25 *torque_z/bt,0, np.inf)
-            """
-            motor_torque_1 = np.clip(0.25*thrust/kt - 0.5*torque_y /(l*kt) - 0.25 *torque_z/bt, 0, np.inf)
-            motor_torque_2 = np.clip(0.25*thrust/kt - 0.5*torque_x /(l*kt) + 0.25 *torque_z/bt,0, np.inf)
-            motor_torque_3 = np.clip(0.25*thrust/kt + 0.5*torque_y /(l*kt) - 0.25 *torque_z/bt,0, np.inf)
-            motor_torque_4 = np.clip(0.25*thrust/kt + 0.5*torque_x /(l*kt) + 0.25 *torque_z/bt,0, np.inf)
-            """
             motor_speeds = [motor_torque_1, motor_torque_2, motor_torque_3, motor_torque_4]
 
             for i in range(4):
@@ -497,7 +467,6 @@ class Controller:
 #vertvel = np.array([0,0,1] + 9*[0])
 cont = Controller()
 max_t  =[1.0,1.3,1.5]
-
 for k in range(0, np.size(t) -1): 
         
     # Determine control inputs based on current state
@@ -522,11 +491,11 @@ for k in range(0, np.size(t) -1):
     #pos[2,k+1] = pos[2,k]-x[2,k+1]*0.02
 
     #print(x[9:,k])
-    """
+    
     if  x[11,k+1] <= 0 :
         x[11,k+1] =0
         break
-    """
+    
     #print(tau[:,k])
     #if x[11,k+1] < 0.0:
     #    break
@@ -549,12 +518,11 @@ plt.xlabel('Time (s)')
 #plt.text(0.5, -0.38, '(a)', ha='center', va='center', transform=plt.gca().transAxes)  # 下にタイトル
 
 plt.subplot(312)
-#plt.plot(t,tu[0,:],'r',label='torque_x')
-#plt.plot(t,tu[1,:],'b',label='torque_y')
-#plt.plot(t,tu[2,:],'g',label='torque_z')
+#plt.plot(t,tu[1,:],'r',label='torque_x')
+#plt.plot(t,tu[2,:],'b',label='torque_y')
 plt.plot(t,x[8,:]*RTD,'g',label='Psi')
 #plt.plot(t,x[9,:],'r',label='x')
-#plt.ylim(35, 40)
+#plt.xlim(0, 1)
 plt.legend(loc='best')
 #plt.ylabel('tau (deg)')
 plt.ylabel('Euler Angle (degrees)')
@@ -593,27 +561,15 @@ plt.title('Time History of Control Inputs')
 
 
 plt.figure(4, figsize=(8,8))
-plt.subplot(311)
-plt.plot(t,speeds[0,:],'r',label='x_dot')
-plt.plot(t,speeds[1,:],'b',label='y_dot')
-plt.plot(t,speeds[2,:],'g',label='z_dot')
+plt.plot(t,speeds[0,:],'r',label='u')
+plt.plot(t,speeds[1,:],'b',label='v')
+plt.plot(t,speeds[2,:],'g',label='w')
 #plt.xlim(0, 10)
-#plt.ylim(-0.1, 0.3)
-plt.xlabel('Time (s)')
-plt.ylabel('Speeds [m/s]')
-plt.legend(loc='best')
-"""
-plt.subplot(312)
-plt.plot(t,acc[0,:],'r',label='u')
-plt.plot(t,acc[1,:],'b',label='v')
-plt.plot(t,acc[2,:],'g',label='w')
-
 #plt.ylim(-10, 2)
-plt.xlabel('Time (s)')
-plt.ylabel('Speeds [m/s]')
+plt.xlabel('Time (sec)')
+plt.ylabel('[m/s]')
 plt.legend(loc='best')
-"""
-#plt.title('speeds',y=-0.25)
+plt.title('speeds',y=-0.25)
 
 plt.figure(5, figsize=(8,8))
 plt.plot(t,tu[0,:],'r',label='thrust')
@@ -631,10 +587,9 @@ axes.set_title('Flight Path')
 axes.set_xlabel('x (m)')
 axes.set_ylabel('y (m)')
 axes.set_zlabel('z (m)')
-axes.scatter(0, 0, 0, color='green', s=200,marker="*")
 #axes.set_xlim(0,1.8)
 #axes.set_ylim(-0.1,1.35)
-axes.set_zlim(0,1.55)
+#axes.set_zlim(0,1.55)
 
 plt.figure(7, figsize=(8,4))
 plt.plot(t[0:-1],th[0,0:-1],'b',label='T1')
